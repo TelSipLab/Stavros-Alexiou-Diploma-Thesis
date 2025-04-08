@@ -1,10 +1,3 @@
-clc; clear; close all;
-
-% simulation parameters
-T = 10;    % simulation time
-Ts = 0.1; % sampling time
-N = T/Ts;  % total number of steps
-
 % initial conditions
 x = zeros(2, N); % state vector (position & velocity)
 x(:,1) = [0; 0]; % x1(0) = 0, x2(0) = 0

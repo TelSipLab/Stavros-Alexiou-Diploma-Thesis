@@ -21,6 +21,10 @@ R = 1;               % penalize control effort
 umin = -1;
 umax = 1;
 
+% Bounds for optimization (fmincon)
+lb = umin * ones(Hc, 1); % lower bound
+ub = umax * ones(Hc, 1); % upper bound
+
 % Initial and target state
 x = [0; 0];          % initial state
 x_ref = [10; 0];     % desired target
@@ -38,10 +42,6 @@ U0 = zeros(Hc, 1);  % Initial guess for the first iteration
 for k = 1:N
     % Cost function definition using only U_opt
     cost_fun = @(U_opt) cost_function(U_opt, x, A, B, Q, R, Hp, Hc, x_ref, Ts);
-    
-    % Bounds for optimization (fmincon)
-    lb = umin * ones(Hc, 1); % lower bound
-    ub = umax * ones(Hc, 1); % upper bound
     
     % Solve optimization problem
     options = optimoptions('fmincon', 'Display', 'off', 'Algorithm', 'sqp');

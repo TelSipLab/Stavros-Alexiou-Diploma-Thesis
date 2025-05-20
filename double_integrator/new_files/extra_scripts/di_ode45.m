@@ -1,6 +1,7 @@
 clc; clear; close all;
 
-tspan = [0 20];
+simulation_time = 20;
+tspan = [0 simulation_time];
 x0 = [0; 0];
 u = 1;
 

@@ -1,19 +1,4 @@
-%% paper --> integrated optimal formation control
 clc; clear;
-
-%% Epeksigisi parametrwn kai statheres
-% x,y,h --> drone position
-% dx,dy,dh --> drone speed
-% Vg --> ground speed
-% gamma --> fligth path angle
-% psi --> heading angle
-% Th --> engine thrust
-% Dg --> Drag
-% m --> mass
-% ga --> accel. due to grav.
-% ng --> g-load
-% Lf --> lift
-% phib --> banking angle
 
 % UAV parameters
 params = uav_params();
@@ -30,9 +15,9 @@ psi0 = 0;
 s0 = [x0; y0; h0; Vg0; gamma0; psi0];
 
 % UAV Control Variables
-ng = 1.3;          % g-load <-- Elevator
-phib = deg2rad(10);  % banking angle <-- Rudder + Ailerons
-Th = 20;           % Thrust <-- Throttle
+ng = 1.3;           % g-load <-- Elevator
+phib = deg2rad(10); % banking angle <-- Rudder + Ailerons
+Th = 20;            % Thrust <-- Throttle
 control_vars = [ng phib Th];
 
 % ODE

@@ -14,11 +14,17 @@ psi0 = 0;
 % Initial state
 s0 = [x0; y0; h0; Vg0; gamma0; psi0];
 
-% UAV Control Variables
-ng = 1.3;           % g-load <-- Elevator
-phib = deg2rad(10); % banking angle <-- Rudder + Ailerons
-Th = 20;            % Thrust <-- Throttle
-control_vars = [ng phib Th];
+% UAV Original Control Variables
+%ng = 1.3;           % g-load <-- Elevator
+%phib = deg2rad(10); % banking angle <-- Rudder + Ailerons
+%Th = 20;            % Thrust <-- Throttle
+%control_vars = [ng phib Th];
+
+% Double integrator control variables
+ax = 0.1;
+ay = 0.05;
+ah = 0.0;
+control_vars = [ax ay ah];
 
 % ODE
 simulation_time = 60;

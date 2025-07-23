@@ -1,20 +1,22 @@
-function dsdt = uav_dynamics(~, s, params, control_vars)
+function dsdt = uav_dynamics(t, s, params, control_vars)
     
-    % state extraction   
+    % states   
+    x = s(1);
+    y = s(2);
     h = s(3);
     Vg = s(4);
     gamma = s(5);
     psi = s(6);
 
-    % parameters extraction
+    % parameters
     m = params.m;
     ga = params.ga;
+    Area = params.Area;
+    CD0 = params.CD0;
+    Kn = params.Kn;
+    Kd = params.Kd;
+    p = params.p;
     Vmw = params.Vmw;
-
-    % gust model
-    Vw_normal = 0.215 * Vmw * log10(h);
-    Vw_tan = 0.09 * Vmw * randn;
-    Vw = Vw_normal + Vw_tan;
 
     % original control variables extraction
     %ng = control_vars(1);
@@ -25,11 +27,19 @@ function dsdt = uav_dynamics(~, s, params, control_vars)
     ax = control_vars(1);
     ay = control_vars(2);
     ah = control_vars(3);
-    [phib, ng, Th, Dg] = ... 
-        di_mapping(ax, ay, ah, psi, gamma, Vg, Vw, params);
+    [phib, ng, Th] = di_mapping(ax, ay, ah, psi, gamma, m, ga, Dg);
 
-    % lift
+    
+    % gust model, lift and drag
+    Vw_normal = 0.215 * Vmw * log10(h);
+    Vw_tan = 0.09 * Vmw * randn;
+    Vw = Vw_normal + Vw_tan;
+
     Lf = ng * (ga - m);
+
+    Dg = ((0.5 * p * ((Vg - Vw)^2) * Area * CD0) + ...
+         (2 * Kd * (Kn^2) * (ng^2) * (m^2))) / ...
+         (p * ((Vg - Vw)^2) * Area);
 
     % Kinematics
     dx = Vg * cos(gamma) * cos(psi);

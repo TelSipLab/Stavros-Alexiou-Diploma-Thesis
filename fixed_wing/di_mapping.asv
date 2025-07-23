@@ -1,13 +1,12 @@
-function [phib, ng, Th, Dg] = di_mapping(ax, ay, ah, psi, gamma, Vg, Vw, params)
+function [phib, ng, Th, Dg] = di_mapping(ax, ay, ah, psi, gamma, Vg, Vw, params);
 
-% parameters extraction
-m = params.m;
-ga = params.ga;
-p = params.p;
-Area = params.Area;
-CD0 = params.CD0;
-Kn = params.Kn;
-Kd = params.Kd;
+ m = params.m;
+ ga = params.ga;
+ p = params.p;
+ Area = params.Area;
+ CD0 = params.CD0;
+ Kn = params.Kn;
+ Kd = params.Kd;
 
 % banking angle (phib)
 phib_num = ay*cos(psi) - ax*sin(psi);

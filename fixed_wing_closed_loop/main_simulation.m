@@ -4,10 +4,9 @@ clc; clear; close all;
 params = uav_params();
 
 % Initial UAV conditions
-x0 = 0; y0 = 0; h0 = 100;
-Vg0 = 40; gamma0 = 0; psi0 = pi/2;
+x0 = 0; y0 = 0; h0 = 80;
+Vg0 = 30; gamma0 = 0; psi0 = 0;
 
-% Initial UAV conditions (ref_state considered)
 % s0_virtual = ref_state_circle(0);
 % x0 = s0_virtual(1); y0 = s0_virtual(2); h0 = s0_virtual(3);
 % dx0 = s0_virtual(4); dy0 = s0_virtual(5); dh0 = s0_virtual(6);
@@ -28,13 +27,10 @@ s0 = [x0; y0; h0; Vg0; gamma0; psi0];
 % ax = 0.5; ay = 0.0; ah = 0.01;
 % control_vars = [ax ay ah];
 
-% Optimal gain matrix for state feedback control (LQR)
-K = lqr_gain_di();
-
 % UAV system dynamics
-simulation_time = 300;
+simulation_time = 120;
 Tspan = [0 simulation_time];
-[t, S] = ode45(@(t, s) uav_dynamics(t, s, params, K), Tspan, s0);
+[t, S] = ode45(@(t, s) uav_dynamics(t, s, params), Tspan, s0);
 
 % extract uav state matrices
 x = S(:, 1);

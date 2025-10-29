@@ -18,14 +18,14 @@ function dsdt = uav_dynamics(t, s, params)
     s_ref = ref_state_circle(t);
 
     % Controller
-    [ax, ay, ah] = sfc_controller(t, s, s_ref);
+    [ax, ay, ah, ~] = sf_controller(t, s, s_ref);
 
     % double integrator mapping 
     [phib, ng, Th, Dg] = ... 
          di_mapping(ax, ay, ah, psi, gamma, Vg, Vw, params);
 
-    % lift
-    Lf = Kn * ng * m * ga;
+    % Lift
+    Lf = ng*m*ga;
 
     % Kinematics
     dx = Vg * cos(gamma) * cos(psi);

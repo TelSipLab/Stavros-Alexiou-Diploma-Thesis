@@ -1,4 +1,4 @@
-function dsdt = uav_dynamics(t, s, params)
+function dsdt = uav_dynamics(~, s, u_k, params)
     
     % state extraction
     h = s(3); Vg = s(4); gamma = s(5); psi = s(6);
@@ -7,18 +7,16 @@ function dsdt = uav_dynamics(t, s, params)
     m = params.m;
     ga = params.ga;
     Vmw = params.Vmw;
-    Kn = params.Kn;
 
     % gust model (wind disturbances)
     Vw_normal = 0.215 * Vmw * log10(h);
     Vw_tan = 0.09 * Vmw * randn;
     Vw = Vw_normal + Vw_tan;
 
-    % reference state
-    s_ref = ref_state_circle(t);
-
-    % Controller
-    [ax, ay, ah, ~] = sf_controller(t, s, s_ref);
+    % controller output
+    ax = u_k(1);
+    ay = u_k(2);
+    ah = u_k(3);
 
     % double integrator mapping 
     [phib, ng, Th, Dg] = ... 

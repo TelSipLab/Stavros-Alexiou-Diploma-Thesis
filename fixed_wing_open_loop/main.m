@@ -22,7 +22,7 @@ s0 = [x0; y0; h0; Vg0; gamma0; psi0];
 
 % Double integrator control variables
 ax = 0.1;
-ay = 0;
+ay = 0.3;
 ah = 0.05;
 control_vars = [ax ay ah];
 

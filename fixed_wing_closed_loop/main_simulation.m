@@ -12,15 +12,44 @@ gamma0 = 0;
 psi0 = 0;
 s0 = [x0; y0; h0; Vg0; gamma0; psi0];
 
-% Simulate UAV Dynamics
-simulation_time = 60;
-Tspan = [0 simulation_time];
-[t, S] = ode45(@(t, s) uav_dynamics(t, s, params), Tspan, s0);
+% Simulation
+T = 60; % simulation time
+Ts = 0.01; % sampling time
+tk = 0:Ts:T; % xronika digmata   
+N = T/Ts; % total samples
+
+t_total = []; S_total = [];
+U = zeros(N,3);
+for k = 0:N-1
+
+    % xronos metaksi dio digmatwn digmatolipsias
+    tk1 = k*Ts;  
+    tk2 = (k+1)*Ts;
+    Tspan = [tk1 tk2];
+
+    % digmatolipsia reference
+    r_k = ref_state_circle(tk1);
+
+    % controller call
+    [ax,ay,ah, ~] = sf_controller(tk1, s0, r_k);
+    u_k = [ax ay ah];
+
+    % uav dynamics call
+    ode_fun = @(t,s) uav_dynamics(t, s, u_k, params);
+    [t_seg, S_seg] = ode45(ode_fun, Tspan, s0);
+
+    % final state values become next initial conditions
+    s0 = S_seg(end,:).';
+
+    % logs
+    t_total = [t; t_seg];
+    S_total = [S; S_seg];
+    U(k+1,:) = u_k;
+end
 
 % UAV data log
-logs = uav_datalog(t, S, params, @ref_state_circle, @sf_controller);
+logs = uav_datalog(t_total, S_total, tk, U_d, @ref_state_circle, params);
 E = logs.E;
-U = logs.U;
 ref = logs.ref;
 x = logs.x; y = logs.y; h = logs.h;
 
@@ -28,10 +57,10 @@ x = logs.x; y = logs.y; h = logs.h;
 [~,~,~,K] = sf_controller(0, s0, ref_state_circle(0));
 plots_func(t, logs, K);
 
-% performance metrics
-P = S(:,1:3);
-R = ref(:,1:3);
-metrics = performance_metrics(t, P, R, E, U);
-disp(metrics.table_axes)
-disp(metrics.table_errors)
-disp(metrics.table_control)
+%% performance metrics
+% P = S(:,1:3);
+% R = ref(:,1:3);
+% metrics = performance_metrics(t, P, R, E, U);
+% disp(metrics.table_axes)
+% disp(metrics.table_errors)
+% disp(metrics.table_control)

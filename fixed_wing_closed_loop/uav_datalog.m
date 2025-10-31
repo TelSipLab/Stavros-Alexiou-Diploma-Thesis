@@ -4,12 +4,18 @@ function logs = uav_datalog(t_all, S_all, tk, U_d, ref_fun, params)
 %   .map.(Th, ng, phib)
 
 % State log (continuous)
-logs.state.x = S_all(:,1); 
-logs.state.y = S_all(:,2);
-logs.state.h = S_all(:,3);
-logs.state.Vg = S_all(:,4);
-logs.state.gamma = S_all(:,5);
-logs.state.psi = S_all(:,6);
+x = S_all(:,1); 
+y = S_all(:,2);
+h = S_all(:,3);
+Vg = S_all(:,4);
+gamma = S_all(:,5);
+psi = S_all(:,6);
+logs.x = x; 
+logs.y = y;
+logs.h = h;
+logs.Vg = Vg;
+logs.gamma = gamma;
+logs.psi = psi;
 
 % velocities log
 logs.vel.xdot = Vg .* cos(gamma) .* cos(psi);
@@ -36,26 +42,28 @@ logs.ref.samp = ref_samp;
 
 % countinuous errors log
 E = [ x - ref_cont(:,1),  y - ref_cont(:,2),  h - ref_cont(:,3) ];
-logs.err = E;
+logs.E = E;
 
 % discrete controller outputs
-logs.U.discrete = U_d;
+logs.U_d = U_d;
+
+% countinuous controller outputs (zero order hold)
+U = interp1(tk(1:end-1), U_d, t_all, 'previous', 'extrap');
+logs.U = U;
 
 % Mapping
 Th  = zeros(N,1);
 ng  = zeros(N,1);
 phb = zeros(N,1);
-
 Vw = zeros(N,1);
 
 for i = 1:N
-    ax = U_hold(i,1);  ay = U_hold(i,2);  ah = U_hold(i,3);
+    ax = U(i,1);  ay = U(i,2);  ah = U(i,3);
     [phb(i), ng(i), Th(i), ~] = di_mapping(ax, ay, ah, ...
                               psi(i), gamma(i), Vg(i), Vw(i), params);
 end
-logs.map.Th   = Th;
-logs.map.ng   = ng;
+logs.map.Th = Th;
+logs.map.ng = ng;
 logs.map.phib = phb;
 
 end
-

@@ -12,14 +12,16 @@ gamma0 = 0;
 psi0 = 0;
 s0 = [x0; y0; h0; Vg0; gamma0; psi0];
 
-% Simulation
+%% Main Simulation
+% Simulation parameters
 T = 60; % simulation time
-Ts = 0.01; % sampling time
-tk = 0:Ts:T; % xronika digmata   
+Ts = 0.05; % sampling time
 N = T/Ts; % total samples
+tk = 0:Ts:T; % discrete time log
 
-t_total = []; S_total = [];
-U = zeros(N,3);
+% simulation loop
+t = []; S = [];
+U_d = zeros(N,3);
 for k = 0:N-1
 
     % xronos metaksi dio digmatwn digmatolipsias
@@ -34,7 +36,7 @@ for k = 0:N-1
     [ax,ay,ah, ~] = sf_controller(tk1, s0, r_k);
     u_k = [ax ay ah];
 
-    % uav dynamics call
+    % uav dynamics call (tmimatiki oloklirosi)
     ode_fun = @(t,s) uav_dynamics(t, s, u_k, params);
     [t_seg, S_seg] = ode45(ode_fun, Tspan, s0);
 
@@ -42,9 +44,9 @@ for k = 0:N-1
     s0 = S_seg(end,:).';
 
     % logs
-    t_total = [t; t_seg];
-    S_total = [S; S_seg];
-    U(k+1,:) = u_k;
+    t_total = [t; t_seg]; % times log (countinuous)
+    S_total = [S; S_seg]; % state log (countinuous)
+    U_d(k+1,:) = u_k; % control log (discrete)
 end
 
 % UAV data log

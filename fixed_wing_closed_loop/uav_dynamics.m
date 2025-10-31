@@ -13,7 +13,7 @@ function dsdt = uav_dynamics(~, s, u_k, params)
     Vw_tan = 0.09 * Vmw * randn;
     Vw = Vw_normal + Vw_tan;
 
-    % controller output
+    % controller output --> dynamics input
     ax = u_k(1);
     ay = u_k(2);
     ah = u_k(3);

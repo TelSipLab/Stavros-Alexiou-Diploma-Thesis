@@ -1,7 +1,7 @@
 function logs = uav_datalog(t_all, S_all, tk, U_d, ref_fun, params)
 % Outputs (struct logs)
-%   .U.hold        (Nx3)         : U_d απλωμένο (ZOH) στα σημεία t_all
-%   .map.(Th, ng, phib)          : mapped φυσικά σήματα σε t_all
+%   .U.hold
+%   .map.(Th, ng, phib)
 
 % State log (continuous)
 logs.state.x = S_all(:,1); 

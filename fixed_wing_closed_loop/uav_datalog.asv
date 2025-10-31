@@ -41,11 +41,13 @@ logs.err = E;
 % discrete controller outputs
 logs.U.discrete = U_d;
 
-% Mapping
+% ---------- Mapping φυσικών σημάτων (continuous lattice) ----------
+% Χρ
 Th  = zeros(N,1);
 ng  = zeros(N,1);
 phb = zeros(N,1);
 
+% Αν θες και άνεμο, φτιάξε εδώ τον Vw(t), π.χ. μηδενικός:
 Vw = zeros(N,1);
 
 for i = 1:N

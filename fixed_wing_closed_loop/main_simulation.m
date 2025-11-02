@@ -14,7 +14,7 @@ s0 = [x0; y0; h0; Vg0; gamma0; psi0];
 
 %% Main Simulation
 % Simulation parameters
-T = 60; % simulation time
+T = 30; % simulation time
 Ts = 0.05; % sampling time
 N = T/Ts; % total samples
 tk = 0:Ts:T; % discrete time log
@@ -52,21 +52,16 @@ for k = 1:N
         t_total = [t_total; t_seg(2:end)];
         S_total = [S_total; S_seg(2:end,:)];
     end
-    U_d(k,:) = u_k; % control log (discrete)
+    U_d(k,:) = u_k; % control log
 end
 
 % UAV data log
 logs = uav_datalog(t_total, S_total, tk, U_d, @ref_state_circle, params);
 E = logs.E;
 
+% performance metrics
+metrics = performance_metrics(t_total, Ts, logs);
+
 % plots
 % [~,~,~,K] = sf_controller(0, s0, ref_state_circle(0));
 % plots_func(t, logs, K);
-
-%% performance metrics
-% P = S(:,1:3);
-% R = ref(:,1:3);
-% metrics = performance_metrics(t, P, R, E, U);
-% disp(metrics.table_axes)
-% disp(metrics.table_errors)
-% disp(metrics.table_control)

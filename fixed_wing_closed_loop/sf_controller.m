@@ -25,7 +25,7 @@ function [ax, ay, ah, K] = sf_controller(~, s, s_ref)
     % K = [k1 k2];
 
     % pole placement using physical parameters
-    Ts = 7; % settling time (sec)
+    Ts = 10; % settling time (sec)
     zeta = 1; % damping ratio
     wn = 4.04/(zeta*Ts); % wn using the +-2% criterion
     k1 = wn^2;

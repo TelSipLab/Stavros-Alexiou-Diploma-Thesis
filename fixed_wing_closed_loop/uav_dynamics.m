@@ -1,17 +1,11 @@
-function dsdt = uav_dynamics(~, s, u_k, params)
+function dsdt = uav_dynamics(~, s, u_k, Vw, params)
     
     % state extraction
-    h = s(3); Vg = s(4); gamma = s(5); psi = s(6);
+    Vg = s(4); gamma = s(5); psi = s(6);
 
     % parameters extraction
     m = params.m;
     ga = params.ga;
-    Vmw = params.Vmw;
-
-    % gust model (wind disturbances)
-    Vw_normal = 0.215 * Vmw * log10(h);
-    Vw_tan = 0.09 * Vmw * randn;
-    Vw = Vw_normal + Vw_tan;
 
     % controller output --> dynamics input
     ax = u_k(1);

@@ -1,10 +1,10 @@
 function s_ref = ref_state_circle(t)
 
     % horizontal circle with constant height
-    C = [0; 0]; % circle center (x,y)
+    C = [10; -10]; % circle center (x,y)
     z = 80; % height
-    R = 10; % radius
-    omega = 0.6; % angular speed
+    R = 50; % radius
+    omega = 0.5; % angular speed
 
     % reference state
     x = C(1) + R*sin(omega*t);

@@ -1,4 +1,4 @@
-function logs = uav_datalog(t_all, S_all, tk, U_d, ref_fun, params)
+function logs = uav_datalog(t_all, S_all, tk, U_d, Vw_d, ref_fun, params)
 
 % state evolution
 x = S_all(:,1); logs.x = x;
@@ -12,13 +12,6 @@ psi = S_all(:,6); logs.psi = psi;
 logs.xdot = Vg .* cos(gamma) .* cos(psi);
 logs.ydot = Vg .* cos(gamma) .* sin(psi);
 logs.hdot = Vg .* sin(gamma);
-
-% discrete controller outputs
-logs.U_d = U_d;
-
-% countinuous controller outputs (zero order hold)
-U = interp1(tk(1:end-1), U_d, t_all, 'previous', 'extrap');
-logs.U = U;
 
 % continuous Reference log (r(t))
 N = length(t_all);
@@ -42,11 +35,24 @@ logs.ref_samp = ref_samp;
 E = [x - ref_cont(:,1), y - ref_cont(:,2), h - ref_cont(:,3)];
 logs.E = E;
 
+% discrete controller outputs log
+logs.U_d = U_d;
+
+% countinuous controller outputs (zero order hold)
+U = interp1(tk(1:end-1), U_d, t_all, 'previous', 'extrap');
+logs.U = U;
+
+% discrete wind log
+logs.Vw_d = Vw_d;
+
+% countinuous wind log (zero order hold)
+Vw = interp1(tk(1:end-1), Vw_d, t_all, 'previous', 'extrap');
+logs.Vw = Vw;
+
 % Th, ng and phb mapping
-Th  = zeros(N,1);
-ng  = zeros(N,1);
+Th = zeros(N,1);
+ng = zeros(N,1);
 phb = zeros(N,1);
-Vw = zeros(N,1);
  for i = 1:N
     ax = U(i,1);  
     ay = U(i,2);  

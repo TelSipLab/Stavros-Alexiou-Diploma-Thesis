@@ -4,22 +4,23 @@ clc; clear; close all;
 params = uav_params();
 
 % Initial UAV conditions
-x0 = -10;
-y0 = 20; 
+x0 = -2;
+y0 = -7; 
 h0 = 60;
 Vg0 = 30; 
 gamma0 = 0; 
 psi0 = 0;
 s0 = [x0; y0; h0; Vg0; gamma0; psi0];
 
-%% Main Simulation
-% Simulation parameters
-T = 30; % simulation time
+% Main Simulation
+T = 60; % simulation time
 Ts = 0.05; % sampling time
 N = T/Ts; % total samples
 tk = 0:Ts:T; % discrete time log
 
 % prealloc
+rng(1);
+Vw_d = zeros(N,1); 
 U_d = zeros(N,3);
 
 % simulation loop
@@ -34,11 +35,15 @@ for k = 1:N
     r_k = ref_state_circle(tk1);
 
     % controller call
-    [ax,ay,ah, ~] = sf_controller(tk1, s0, r_k);
+    [ax, ay, ah, ~] = sf_controller(tk1, s0, r_k);
     u_k = [ax ay ah];
+    U_d(k,:) = u_k;
+
+    % wind disturbances
+    Vw_d(k) = wind_disturbances(s0, params);
 
     % uav dynamics call (tmimatiki oloklirosi)
-    ode_fun = @(t,s) uav_dynamics(t, s, u_k, params);
+    ode_fun = @(t,s) uav_dynamics(t, s, u_k, Vw_d(k), params);
     [t_seg, S_seg] = ode45(ode_fun, Tspan, s0);
 
     % final state values become next initial conditions
@@ -52,16 +57,14 @@ for k = 1:N
         t_total = [t_total; t_seg(2:end)];
         S_total = [S_total; S_seg(2:end,:)];
     end
-    U_d(k,:) = u_k; % control log
 end
 
 % UAV data log
-logs = uav_datalog(t_total, S_total, tk, U_d, @ref_state_circle, params);
-E = logs.E;
+logs = uav_datalog(t_total, S_total, tk, U_d, Vw_d, @ref_state_circle, params);
 
 % performance metrics
-metrics = performance_metrics(t_total, Ts, logs);
+metrics = performance_metrics(t_total, Ts, logs)
 
 % plots
-% [~,~,~,K] = sf_controller(0, s0, ref_state_circle(0));
-% plots_func(t, logs, K);
+[~,~,~,K] = sf_controller(0, s0, ref_state_circle(0));
+plots_func(t_total, logs, metrics, K);

@@ -24,8 +24,12 @@ Vw_d = zeros(N,1);
 U_d = zeros(N,3);
 
 % Initialize PID errors
-pid_errors.ex_prev = 0; pid_errors.ey_prev = 0; pid_errors.eh_prev = 0;
-pid_errors.ex_int = 0; pid_errors.ey_int = 0; pid_errors.eh_int = 0;
+pid_errors.ex_prev = 0;
+pid_errors.ey_prev = 0;
+pid_errors.eh_prev = 0;
+pid_errors.ex_int = 0;
+pid_errors.ey_int = 0;
+pid_errors.eh_int = 0;
 
 % simulation loop
 for k = 1:N
@@ -39,8 +43,7 @@ for k = 1:N
     r_k = ref_state_circle(tk1);
 
     % controller call
-    % [ax, ay, ah, Kxy, Kz] = sf_controller(s0, r_k);
-    [ax, ay, ah, pid_errors] = pid_controller(s0, r_k, Ts, pid_errors);
+    [ax, ay, ah, Kxy, Kz] = sf_controller(s0, r_k);
     u_k = [ax ay ah];
     U_d(k,:) = u_k;
 
@@ -71,4 +74,4 @@ logs = uav_datalog(t_total, S_total, tk, U_d, Vw_d, @ref_state_circle, params);
 metrics = performance_metrics(t_total, Ts, logs)
 
 % plots
-plots_func(t_total, logs, metrics);
+plots_func(t_total, logs, metrics, Kxy, Kz);

@@ -12,22 +12,38 @@ gamma0 = 0;
 psi0 = 0;
 s0 = [x0; y0; h0; Vg0; gamma0; psi0];
 
-% Main Simulation
+% Simulation Parameteres
 T = 60; % simulation time
 Ts = 0.05; % sampling time
 N = T/Ts; % total samples
 tk = 0:Ts:T; % discrete time log
 
-% prealloc
-rng(1);
-Vw_d = zeros(N,1); 
-U_d = zeros(N,3);
-
-% Initialize PID errors
+%% PID Setup
 pid_errors.ex_prev = 0; pid_errors.ey_prev = 0; pid_errors.eh_prev = 0;
 pid_errors.ex_int = 0; pid_errors.ey_int = 0; pid_errors.eh_int = 0;
 
-% simulation loop
+%% MPC Setup
+
+% Discrete-time model (Forward Euler Approximation)
+A = [1 Ts; 0 1]; B = [0; Ts];
+
+% prediction & control horizon
+Hp = 10; Hc = 5;
+
+% Cost weights for cost function
+Q = eye(2); R = 1;               
+
+% Constraints & bounds for optimization (fmincon)
+umin = -1; lb = umin * ones(Hc, 1);
+umax = 1; ub = umax * ones(Hc, 1);
+
+%% prealloc
+rng(1);
+Vw_d = zeros(N,1); 
+U_d = zeros(N,3);
+U0 = zeros(Hc, 3);
+
+%% Main Simulation Loop
 for k = 1:N
 
     % xronos metaksi dio digmatwn digmatolipsias
@@ -38,16 +54,25 @@ for k = 1:N
     % digmatolipsia reference
     r_k = ref_state_circle(tk1);
 
-    % controller call
+    % controllers call
+
+    % PID
+    % [ax, ay, ah, pid_errors] = pid_controller(s0, r_k, Ts, pid_errors);
+
+    % SF
     % [ax, ay, ah, Kxy, Kz] = sf_controller(s0, r_k);
-    [ax, ay, ah, pid_errors] = pid_controller(s0, r_k, Ts, pid_errors);
+
+    % MPC
+    % 
+
+    % apply accelarations & control storage
     u_k = [ax ay ah];
     U_d(k,:) = u_k;
 
     % wind disturbances
     Vw_d(k) = wind_disturbances(s0, params);
 
-    % uav dynamics call (tmimatiki oloklirosi)
+    % UAV Dynamics
     ode_fun = @(t,s) uav_dynamics(t, s, u_k, Vw_d(k), params);
     [t_seg, S_seg] = ode45(ode_fun, Tspan, s0);
 

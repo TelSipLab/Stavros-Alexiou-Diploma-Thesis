@@ -24,7 +24,7 @@ phib = logs.phib;
 C = uav_constraints();
 
 %% fig1: 3D Trajectory
-figure('Position',[1400 500 800 600]);
+figure;
 plot3(x, y, h, 'b-', 'LineWidth', 1.6); hold on;
 plot3(rx, ry, rh, 'g--', 'LineWidth', 1.4);
 plot3(x(1), y(1), h(1), 'go', 'MarkerSize', 9, 'MarkerFaceColor', 'g');
@@ -34,7 +34,7 @@ title('UAV 3D Trajectory vs Reference'); grid on; axis equal;
 legend('UAV','Reference','Start','End','Location','best');
 
 %% fig2: State Evolution + state constraints + reference
-figure('Position',[100 100 600 600]);
+figure;
 
 % uav position (x,y,h)
 subplot(6,1,1); plot(t, x,'b','LineWidth',1.4); grid on; ylabel('x [m]'); 
@@ -73,7 +73,7 @@ legend('\psi','limits'); hold off;
 sgtitle('UAV State Evolution');
 
 %% fig3: Velocities from logs
-figure('Position',[750 100 500 500]);
+figure;
 subplot(3,1,1); plot(t, xdot,'LineWidth',1.4); grid on; ylabel('\it\_x [m/s]');   
 title('Velocities');
 subplot(3,1,2); plot(t, ydot,'LineWidth',1.4); grid on; ylabel('\it\_y [m/s]' );
@@ -81,7 +81,7 @@ subplot(3,1,3); plot(t, hdot,'LineWidth',1.4); grid on; ylabel('\it\_h [m/s]');
 xlabel('Time [s]');
 
 %% fig4: Accelerations (controller outputs)
-figure('Position',[750 800 500 500]);
+figure;
 subplot(3,1,1); plot(t, xddot, 'LineWidth',1.4); grid on; ylabel('\it\_x [m/s^2]'); 
 title('Accelerations (controller outputs)');
 subplot(3,1,2); plot(t, yddot,'LineWidth',1.4); grid on; ylabel('\it\_y [m/s^2]');
@@ -89,7 +89,7 @@ subplot(3,1,3); plot(t, hddot, 'LineWidth',1.4); grid on; ylabel('\it\_h [m/s^2]
 xlabel('Time [s]');
 
 %% fig5: Th, ng, phib
-figure('Position',[100 800 500 500]);
+figure;
 
 % Th
 subplot(3,1,1); plot(t, Th, 'LineWidth',1.4);
@@ -116,7 +116,7 @@ ylabel(' \phi_b [deg]'); xlabel('Time [s]'); title('Bank angle');
 legend('\phi_b','limits'); hold off;
 
 %% fig6: Euclidean Distance Evolution
-figure('Position',[1400 100 600 300]);
+figure;
 plot(t, metrics.ED,'LineWidth',1.4); grid on;
 ylabel('Euclidean Distance'); xlabel('Time [s]'); 
 title('Euclidian Distance Evolution');

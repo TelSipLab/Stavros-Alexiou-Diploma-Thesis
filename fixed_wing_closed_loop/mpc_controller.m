@@ -1,4 +1,6 @@
- % cost_fun definition using only U for fmincon use
+function [ax, ay, ah] = mpc_controller(s0, r_k, mpc_setup); 
+
+% cost_fun definition using only U for fmincon use
  cost_fun_mpc = @(U) cost_func_mpc(U, A, B, Q, R, Hp, Hc, X(:,k), x_target);               
 
  % optimization problem solving
@@ -16,3 +18,5 @@
 
  % shift U_opt for the next initial U (U0)
  U0 = [U_opt(2:end); U_opt(end)];
+
+ end

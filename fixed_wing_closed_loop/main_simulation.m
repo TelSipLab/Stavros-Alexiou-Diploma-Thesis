@@ -19,8 +19,18 @@ N = T/Ts; % total samples
 tk = 0:Ts:T; % discrete time log
 
 %% PID Setup
-pid_errors.ex_prev = 0; pid_errors.ey_prev = 0; pid_errors.eh_prev = 0;
-pid_errors.ex_int = 0; pid_errors.ey_int = 0; pid_errors.eh_int = 0;
+
+% previus e errors
+s_ref = ref_state_circle(0);
+pid_errors.ex_prev = s_ref(1) - x0; 
+pid_errors.ey_prev = s_ref(2) - y0; 
+pid_errors.eh_prev = s_ref(3) - h0;
+% due to: ed[k] = (e[k]-e[k-1])/Ts)
+
+% previus ei errors
+pid_errors.ex_int = 0; 
+pid_errors.ey_int = 0; 
+pid_errors.eh_int = 0;
 
 %% MPC Setup
 
@@ -46,24 +56,24 @@ U0 = zeros(Hc, 3);
 %% Main Simulation Loop
 for k = 1:N
 
-    % xronos metaksi dio digmatwn digmatolipsias
+    % time betwen two samples
     tk1 = tk(k);
     tk2 = tk(k+1);
     Tspan = [tk1 tk2];
 
-    % digmatolipsia reference
+    % reference sample at time k
     r_k = ref_state_circle(tk1);
 
     % controllers call
 
     % PID
-    % [ax, ay, ah, pid_errors] = pid_controller(s0, r_k, Ts, pid_errors);
+    [ax, ay, ah, pid_errors] = pid_controller(s0, r_k, Ts, pid_errors);
 
     % SF
     % [ax, ay, ah, Kxy, Kz] = sf_controller(s0, r_k);
 
     % MPC
-    % 
+    % [ax, ay, ah] = mpc_controller(s0, r_k, mpc_setup);
 
     % apply accelarations & control storage
     u_k = [ax ay ah];

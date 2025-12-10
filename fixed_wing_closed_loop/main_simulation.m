@@ -34,8 +34,20 @@ pid_errors.eh_int = 0;
 
 %% MPC Setup
 
-% Discrete-time model (Forward Euler Approximation)
-A = [1 Ts; 0 1]; B = [0; Ts];
+% Discrete-time 3D model (Forward Euler Approximation)
+A = [1 0 0 Ts 0 0; 
+     0 1 0 0 Ts 0;
+     0 0 1 0 0 Ts;
+     0 0 0 1 0 0;
+     0 0 0 0 1 0;
+     0 0 0 0 0 1];
+
+B = [0 0 0;
+     0 0 0;
+     0 0 0;
+     Ts 0 0;
+     0 Ts 0;
+     0 0 Ts];
 
 % prediction & control horizon
 Hp = 10; Hc = 5;
@@ -67,13 +79,13 @@ for k = 1:N
     % controllers call
 
     % PID
-    [ax, ay, ah, pid_errors] = pid_controller(s0, r_k, Ts, pid_errors);
+    % [ax, ay, ah, pid_errors] = pid_controller(s0, r_k, Ts, pid_errors);
 
     % SF
     % [ax, ay, ah, Kxy, Kz] = sf_controller(s0, r_k);
 
     % MPC
-    % [ax, ay, ah] = mpc_controller(s0, r_k, mpc_setup);
+    [ax, ay, ah] = mpc_controller(s0, r_k, A, B, Hp, Hc, Q, R, lb, ub, U0);
 
     % apply accelarations & control storage
     u_k = [ax ay ah];

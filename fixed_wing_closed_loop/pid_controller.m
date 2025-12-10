@@ -18,9 +18,9 @@ dey = (ey - pid_errors.ey_prev)/Ts;
 deh = (eh - pid_errors.eh_prev)/Ts;
 
 % PID Gains
-Kp_x = 0.5; Ki_x = 0; Kd_x = 1;
-Kp_y = 0.5; Ki_y = 0; Kd_y = 1;
-Kp_h = 0.3; Ki_h = 0; Kd_h = 0.8;
+Kp_x = 0.5; Ki_x = 0.1; Kd_x = 1;
+Kp_y = 0.5; Ki_y = 0.1; Kd_y = 1;
+Kp_h = 0.3; Ki_h = 0.1; Kd_h = 0.8;
 
 % PID Outputs (accelerations)
 ax = Kp_x*ex + Ki_x*pid_errors.ex_int + Kd_x*dex;

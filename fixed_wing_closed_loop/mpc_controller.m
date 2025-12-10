@@ -1,4 +1,4 @@
-function [ax, ay, ah] = mpc_controller(s0, r_k, mpc_setup); 
+function [ax, ay, ah] = mpc_controller(s0, r_k, A, B, Hp, Hc, Q, R, lb, ub, U0);
 
 % cost_fun definition using only U for fmincon use
  cost_fun_mpc = @(U) cost_func_mpc(U, A, B, Q, R, Hp, Hc, X(:,k), x_target);               

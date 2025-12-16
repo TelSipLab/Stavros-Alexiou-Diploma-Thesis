@@ -1,24 +1,23 @@
-function J = cost_func_mpc(U, s0, r, A, B, Q, R, Hp, Hc)
+function J = cost_func_mpc(U, s0, A, B, Q, R, Hp, Hc, r)
 
-    nx = numel(s0); % nx = 6
-    nu = size(B, 2); % nu = 3
-    U = reshape(U, nu, Hc);  % (3*Hc)x1 --> 3xHc
+Umat = reshape(U, 3, Hc);
+nx = length(s0);
+S = zeros(nx, Hp+1);
+S(:,1) = s0;
 
-    % State predictions
-    S = zeros(nx, Hp+1);
-    S(:,1) = s0;
-    for k = 1:Hp
-        if k <= Hc
-            S(:, k+1) = A*S(:, k) + U(:, k);
-        else
-            S(:, k+1) = A*S(:, k) + U(:, Hc);
-        end
+for k = 1:Hp
+    if k <= Hc
+        u_k = Umat(:,k);
+    else
+        u_k = Umat(:,Hc);
     end
 
-    % Total Cost
-    E = S(:,2:end) - r;
-    tracking_error = trace(E.' * Q * E);
-    control_effort = trace(U.' * R * U);
-    J = tracking_error + control_effort;
+    S(:,k+1) = A*S(:,k) + B*u_k;
+end
+
+E = S(:,2:end) - r;
+tracking_cost = sum( vecnorm((Q^(1/2))*E,2,1).^2 );
+control_cost = sum( vecnorm((R^(1/2))*Umat,2,1).^2 );
+J = tracking_cost + control_cost;
 
 end

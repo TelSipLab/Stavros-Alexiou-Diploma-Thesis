@@ -1,22 +1,25 @@
-function [ax, ay, ah] = mpc_controller(s0, r_k, A, B, Hp, Hc, Q, R, lb, ub, U0);
+function [ax, ay, ah, U0_next, exitflag, output] = ...
+    mpc_controller(s0, r, A, B, Q, R, Hp, Hc, lb, ub, U0, Ts)
 
-% cost_fun definition using only U for fmincon use
- cost_fun_mpc = @(U) cost_func_mpc(U, A, B, Q, R, Hp, Hc, X(:,k), x_target);               
+    % Dimensions
+    nu = size(B,2);
 
- % optimization problem solving
- [U_opt, J, exit_flag, output] = ... 
-                fmincon(cost_fun_mpc, U0, [], [], [], [], lb, ub, []);
- fprintf('Step %d: Exit Flag = %d, Iterations = %d, J = %.4f\n', ... 
-                k, exit_flag, output.iterations, J);
+    % cost function definition using only U
+    cost_fun = @(U0) cost_func_mpc(U0, s0, r, A, B, Q, R, Hp, Hc);
 
- % update control signal storage (first control input)
- U(k) = U_opt(1);
+    % fmincon settings
+    options = optimoptions('fmincon', 'Display', 'none', ...
+                                      'Algorithm', 'sqp');
 
- % apply first control input to real system
- [t, x] = ode45(@(t, x) di(t, x, u), [0 Ts], X(:,k));
- X(:, k+1) = x(end,:)'; % update state matrix storage
+    % minimazation problem
+    [U_opt, J, exitflag, output] = fmincon(cost_fun, U0, ...
+                                           [], [], [], [], ...
+                                           lb, ub, [], options);
 
- % shift U_opt for the next initial U (U0)
- U0 = [U_opt(2:end); U_opt(end)];
-
- end
+    % apply first control input
+    u0 = U_opt(1:nu);
+    ax = u0(1);
+    ay = u0(2);
+    ah = u0(3);
+    U0_next = [U_opt(nu+1:end); U_opt(end-nu+1:end)];
+end

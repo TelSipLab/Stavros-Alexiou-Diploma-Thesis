@@ -14,7 +14,7 @@ s0 = [x0; y0; h0; Vg0; gamma0; psi0];
 dx0 = Vg0 * cos(gamma0) * cos(psi0);
 dy0 = Vg0 * cos(gamma0) * sin(psi0);
 dh0 = Vg0 * sin(gamma0);
-s0_mpc = [x0; y0; h0; dx0; dy0; dh0];
+s0 = [x0; y0; h0; dx0; dy0; dh0];
 
 % Simulation Parameteres
 T = 60; % simulation time
@@ -58,21 +58,20 @@ Hp = 10;
 Hc = 5;
 
 % Cost weights for cost function
-Q = eye(2); 
-R = 0.1*eye(3);               
+Q = diag([10 10 20 1 1 20]); % 6x6 - varos gia tin parakolouthisi
+R = 10*eye(3); % 3x3 - varos gia to control effort              
 
 % Constraints & bounds for optimization (fmincon)
-umin = -5; 
-umax = 5;
-lb = umin * ones(3*Hc, 1); 
-ub = umax * ones(3*Hc, 1);
-
-U0 = zeros(3*Hc, 1); % initial guess for mpc
+umin_xy = -2; umax_xy = 2;
+umin_h = -0.3; umax_h = 0.3;
+lb = repmat([umin_xy; umin_xy; umin_h], Hc, 1);
+ub = repmat([umax_xy; umax_xy; umax_h], Hc, 1);
 
 %% prealloc
 rng(1);
 Vw_d = zeros(N,1); % wind log alloc
 U_d = zeros(N,3); % control log alloc
+U0 = zeros(3*Hc, 1); % first control signal guess for mpc
 
 %% Main Simulation Loop
 for k = 1:N
@@ -93,11 +92,11 @@ for k = 1:N
 
     % ref window for MPC call
     t = (k-1)*Ts;
-    r = mpc_ref_window(t, Hp, Ts, @ref_state_circle);  % 6 x Hp
+    r_mpc = mpc_ref_window(t, Hp, Ts, @ref_state_circle);  % 6 x Hp
 
     % MPC
     [ax, ay, ah, U0, exitflag, output] = ...
-        mpc_controller(s0, r, A, B, Q, R, Hp, Hc, lb, ub, U0, Ts);
+        mpc_controller(s0, r_mpc, A, B, Q, R, Hp, Hc, lb, ub, U0);
 
     % apply accelarations & control storage
     u_k = [ax ay ah];

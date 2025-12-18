@@ -1,18 +1,18 @@
 function [ax, ay, ah, U0_next, exitflag, output] = ...
-    mpc_controller(s0, r, A, B, Q, R, Hp, Hc, lb, ub, U0, Ts)
+    mpc_controller(s0, r, A, B, Q, R, Hp, Hc, lb, ub, U0)
 
     % Dimensions
     nu = size(B,2);
 
     % cost function definition using only U
-    cost_fun = @(U0) cost_func_mpc(U0, s0, r, A, B, Q, R, Hp, Hc);
+    cost_fun = @(U) mpc_cost_func(U, s0, A, B, Q, R, Hp, Hc, r);
 
     % fmincon settings
     options = optimoptions('fmincon', 'Display', 'none', ...
                                       'Algorithm', 'sqp');
 
     % minimazation problem
-    [U_opt, J, exitflag, output] = fmincon(cost_fun, U0, ...
+    [U_opt, ~, exitflag, output] = fmincon(cost_fun, U0, ...
                                            [], [], [], [], ...
                                            lb, ub, [], options);
 

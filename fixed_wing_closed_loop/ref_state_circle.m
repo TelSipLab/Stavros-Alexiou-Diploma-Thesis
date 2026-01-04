@@ -3,7 +3,7 @@ function s_ref = ref_state_circle(t)
     % horizontal circle with constant height
     C = [10; -10]; % circle center (x,y)
     z = 80; % height
-    R = 150; % radius
+    R = 100; % radius
     omega = 0.5; % angular speed
 
     % reference state

@@ -17,8 +17,8 @@ dh0 = Vg0 * sin(gamma0);
 s0 = [x0; y0; h0; dx0; dy0; dh0];
 
 % Simulation Parameteres
-T = 60; % simulation time
-Ts = 0.05; % sampling time
+T = 20; % simulation time
+Ts = 0.1; % sampling time
 N = T/Ts; % total samples
 tk = 0:Ts:T; % discrete time log
 
@@ -58,12 +58,12 @@ Hp = 10;
 Hc = 5;
 
 % Cost weights for cost function
-Q = diag([10 10 20 1 1 20]); % 6x6 - varos gia tin parakolouthisi
-R = 10*eye(3); % 3x3 - varos gia to control effort              
+Q = diag([1 1 1 0.2 0.2 0.2]); % 6x6 - weight for tracking cost
+R = 10*eye(3); % 3x3 - weight for control cost              
 
 % Constraints & bounds for optimization (fmincon)
-umin_xy = -2; umax_xy = 2;
-umin_h = -0.3; umax_h = 0.3;
+umin_xy = -100; umax_xy = 100;
+umin_h = -100; umax_h = 100;
 lb = repmat([umin_xy; umin_xy; umin_h], Hc, 1);
 ub = repmat([umax_xy; umax_xy; umax_h], Hc, 1);
 
@@ -71,7 +71,7 @@ ub = repmat([umax_xy; umax_xy; umax_h], Hc, 1);
 rng(1);
 Vw_d = zeros(N,1); % wind log alloc
 U_d = zeros(N,3); % control log alloc
-U0 = zeros(3*Hc, 1); % first control signal guess for mpc
+U0 = zeros(3*Hc,1); % first control signal guess for mpc
 
 %% Main Simulation Loop
 for k = 1:N

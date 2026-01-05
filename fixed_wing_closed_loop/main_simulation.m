@@ -10,11 +10,11 @@ h0 = 60;
 Vg0 = 30; 
 gamma0 = 0; 
 psi0 = 0;
-s0 = [x0; y0; h0; Vg0; gamma0; psi0];
+s0 = [x0; y0; h0; Vg0; gamma0; psi0]; % state vector for pid and sf
 dx0 = Vg0 * cos(gamma0) * cos(psi0);
 dy0 = Vg0 * cos(gamma0) * sin(psi0);
 dh0 = Vg0 * sin(gamma0);
-s0 = [x0; y0; h0; dx0; dy0; dh0];
+s0 = [x0; y0; h0; dx0; dy0; dh0]; % state vector for mpc
 
 % Simulation Parameteres
 T = 20; % simulation time

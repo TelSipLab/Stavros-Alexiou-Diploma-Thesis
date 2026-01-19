@@ -20,19 +20,19 @@ end
 E = S(:,2:end) - ref; % 6 x Hp
 
 % tracking cost
-Jx = E(1,:) * Q(1,1) * E(1,:).';
-Jy = E(2,:) * Q(2,2) * E(2,:).';
-Jh = E(3,:) * Q(3,3) * E(3,:).';
-Jdx = E(4,:) * Q(4,4) * E(4,:).';
-Jdy = E(5,:) * Q(5,5) * E(5,:).';
-Jdh = E(6,:) * Q(6,6) * E(6,:).';
+Jx = E(1,:).' * Q(1,1) * E(1,:);
+Jy = E(2,:).' * Q(2,2) * E(2,:);
+Jh = E(3,:).' * Q(3,3) * E(3,:);
+Jdx = E(4,:).' * Q(4,4) * E(4,:);
+Jdy = E(5,:).' * Q(5,5) * E(5,:);
+Jdh = E(6,:).' * Q(6,6) * E(6,:);
 tracking_cost = Jx + Jy + Jh + Jdx + Jdy + Jdh;
 % tracking_cost = sum(diag(E.'*Q*E));
 
 % control cost
-Jax = U(1,:) * R(1,1) * U(1,:).';
-Jay = U(2,:) * R(2,2) * U(2,:).';
-Jah = U(3,:) * R(3,3) * U(3,:).';
+Jax = R(1,1) * (U(1,:).'*U(1,:));
+Jay = R(2,2) * (U(2,:).'*U(2,:));
+Jah = R(3,3) * (U(3,:).'*U(3,:));
 control_cost = Jax + Jay + Jah;
 % control_cost = sum(diag(U.'*R*U));
 

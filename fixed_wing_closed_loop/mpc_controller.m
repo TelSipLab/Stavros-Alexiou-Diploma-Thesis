@@ -1,4 +1,4 @@
-function [ax, ay, ah, U0, exitflag, output] = ...
+function [ax, ay, ah, U0out, exitflag, output] = ...
     mpc_controller(s0, r, A, B, Q, R, Hp, Hc, lb, ub, U0)
 
     % Dimensions
@@ -22,5 +22,5 @@ function [ax, ay, ah, U0, exitflag, output] = ...
     ah = u0(3);
 
     % shift U0 and hold last output
-    U0 = [U_opt(nu+1:end); U_opt(end-nu+1:end)];
+    U0out = [U_opt(nu+1:end); U_opt(end-nu+1:end)];
 end

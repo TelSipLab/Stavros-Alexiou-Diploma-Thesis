@@ -55,15 +55,15 @@ B = [0 0 0;
 
 % prediction & control horizon
 Hp = 10; 
-Hc = 5;
+Hc = 10;
 
 % Cost weights for cost function
 Q = diag([1 1 1 0.2 0.2 0.2]); % 6x6 - weight for tracking cost
-R = 10*eye(3); % 3x3 - weight for control cost              
+R = 0*eye(3); % 3x3 - weight for control cost              
 
 % Constraints & bounds for optimization (fmincon)
-umin_xy = -100; umax_xy = 100;
-umin_h = -100; umax_h = 100;
+umin_xy = -2; umax_xy = 2;
+umin_h = -2; umax_h = 2;
 lb = repmat([umin_xy; umin_xy; umin_h], Hc, 1);
 ub = repmat([umax_xy; umax_xy; umax_h], Hc, 1);
 

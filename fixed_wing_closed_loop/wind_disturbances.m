@@ -1,7 +1,7 @@
-function Vw = wind_disturbances(s, params)
+function Vw = wind_disturbances(ss, params)
 
     % current altitude
-    h = s(3);
+    h = ss(3);
 
     % parameters extractrion
     Vmw = params.Vmw;

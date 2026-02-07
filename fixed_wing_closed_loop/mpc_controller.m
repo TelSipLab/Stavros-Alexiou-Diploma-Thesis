@@ -1,11 +1,11 @@
 function [ax, ay, ah, U0out, exitflag, output] = ...
-    mpc_controller(s0, r, A, B, Q, R, Hp, Hc, lb, ub, U0)
+    mpc_controller(cs0, r, A, B, Q, R, Rd, Hp, Hc, lb, ub, U0, u_prev)
 
     % Dimensions
     nu = size(B,2); % nu = 3
 
     % cost function definition using only U
-    cost_fun = @(U) mpc_cost_func(U, s0, A, B, Q, R, Hp, Hc, r);
+    cost_fun = @(U) mpc_cost_func(U, u_prev, cs0, A, B, Q, R, Rd, Hp, Hc, r);
 
     % fmincon settings
     options = optimoptions('fmincon', 'Display', 'none', ...

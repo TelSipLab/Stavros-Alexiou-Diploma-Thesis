@@ -1,7 +1,7 @@
-function [ax, ay, ah, pid_errors] = pid_controller(s, r, Ts, pid_errors)
+function [ax, ay, ah, pid_errors] = pid_controller(cs, r, Ts, pid_errors)
 
 % uav position and reference position
-x = s(1); y = s(2); h = s(3);
+x = cs(1); y = cs(2); h = cs(3);
 rx = r(1); ry = r(2); rh = r(3);
 
 % Errors
@@ -18,9 +18,9 @@ dey = (ey - pid_errors.ey_prev)/Ts;
 deh = (eh - pid_errors.eh_prev)/Ts;
 
 % PID Gains
-Kp_x = 0.5; Ki_x = 0.1; Kd_x = 1;
-Kp_y = 0.5; Ki_y = 0.1; Kd_y = 1;
-Kp_h = 0.3; Ki_h = 0.1; Kd_h = 0.8;
+Kp_x = 0.3; Ki_x = 0; Kd_x = 1;
+Kp_y = 0.3; Ki_y = 0; Kd_y = 1;
+Kp_h = 0.1; Ki_h = 0; Kd_h = 0.8;
 
 % PID Outputs (accelerations)
 ax = Kp_x*ex + Ki_x*pid_errors.ex_int + Kd_x*dex;

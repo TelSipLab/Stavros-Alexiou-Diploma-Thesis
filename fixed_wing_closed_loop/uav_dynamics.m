@@ -1,7 +1,7 @@
-function dsdt = uav_dynamics(~, s, u_k, Vw, params)
+function dsdt = uav_dynamics(~, ss, u_k, Vw, params)
     
     % state extraction
-    Vg = s(4); gamma = s(5); psi = s(6);
+    Vg = ss(4); gamma = ss(5); psi = ss(6);
 
     % parameters extraction
     m = params.m;

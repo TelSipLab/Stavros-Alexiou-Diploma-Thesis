@@ -1,4 +1,4 @@
-function plots_func(t, logs, metrics)
+function plots_func(t, logs, metrics, J_k, exitflag_k)
 %% log extraction
 % states
 x = logs.x; y = logs.y; h = logs.h;
@@ -120,6 +120,14 @@ figure;
 plot(t, metrics.ED,'LineWidth',1.4); grid on;
 ylabel('Euclidean Distance'); xlabel('Time [s]'); 
 title('Euclidian Distance Evolution');
+
+%% fig7: 
+figure; plot(J_k); grid on;
+title('Objective value J over time'); xlabel('k'); ylabel('J');
+
+%% fig8:
+figure; stairs(exitflag_k); grid on;
+title('exitflag value over time'); xlabel('k'); ylabel('exitflag');
 
 %% fig7: Closed-loop poles for x-y axis
 % k1 = Kxy(1); k2 = Kxy(2);

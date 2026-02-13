@@ -64,7 +64,7 @@ Hc = 10;
 % Cost weights for cost function
 Q = diag([3 3 2 4 4 3]); % 6x6 weight for tracking_cost
 R = diag([5 5 4]);       % 3x3 weight for control_cost
-Rd = diag([1 1 0.5]);      % 3x3 weight for dU_cost             
+Rd = diag([1 1 0.5]);    % 3x3 weight for dU_cost             
 
 % Constraints & bounds for optimization (fmincon)
 umin_xy = -10; umax_xy = 10;
@@ -78,6 +78,8 @@ Vw_d = zeros(N,1); % wind log alloc
 U_d = zeros(N,3); % control log alloc
 U0 = zeros(3*Hc,1); % first control signal guess for mpc
 u_prev = zeros(3,1); % for dU in mpc_cost_func
+J_k = zeros(N,1); % mpc_cost_func value log
+exitflag_k = zeros(N,1); % exitflag mpc_cost_func log
 
 %% Main Simulation Loop
 for k = 1:N
@@ -98,14 +100,20 @@ for k = 1:N
 
     % MPC
     t = (k-1)*Ts;
+    r_prev = ref_state_circle(t); % 9x1
+    a_ref_prev = r_prev(7:9); % 3x1
     ref_mpc = mpc_ref_window(t, Hp, Ts, @ref_state_circle);
-    [ax, ay, ah, U0, exitflag, output] = ...
-         mpc_controller(cs0, ref_mpc, A, B, Q, R, Rd, Hp, Hc, lb, ub, U0, u_prev);
+    [ax, ay, ah, U0, J, exitflag, output] = ...
+         mpc_controller(cs0, ref_mpc, A, B, Q, R, Rd, Hp, Hc, lb, ub, U0, u_prev, a_ref_prev);
 
     % apply accelarations & control storage
     u_k = [ax ay ah];
     U_d(k,:) = u_k;
     u_prev = u_k';
+
+    % mpc_cost_func logs
+    J_k(k) = J;
+    exitflag_k(k) = exitflag;
 
     % wind disturbances
     Vw_d(k) = wind_disturbances(ss0, params);
@@ -140,4 +148,4 @@ logs = uav_datalog(t_total, S_total, tk, U_d, Vw_d, @ref_state_circle, params);
 metrics = performance_metrics(t_total, Ts, logs)
 
 % plots
-plots_func(t_total, logs, metrics);
+plots_func(t_total, logs, metrics, J_k, exitflag_k);

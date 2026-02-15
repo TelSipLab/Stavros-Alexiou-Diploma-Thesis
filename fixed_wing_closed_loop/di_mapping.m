@@ -28,5 +28,6 @@ Dg = 0.5*p*((Vg-Vw)^2)*Area*CD0 + ...
 % Thrust (Th)
 Th = (sin(gamma)*(ah+ga) + ... 
     cos(gamma)*(ax*cos(psi) + ay*sin(psi)))*m + Dg;
+% Th = max(Th, 0);
 
 end

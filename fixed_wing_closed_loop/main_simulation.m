@@ -21,7 +21,7 @@ ss0 = [x0; y0; h0; Vg0; gamma0; psi0];
 cs0 = [x0; y0; h0; dx0; dy0; dh0];
 
 % Simulation Parameteres
-T = 20; % simulation time
+T = 30; % simulation time
 Ts = 0.1; % sampling time
 N = T/Ts; % total samples
 tk = 0:Ts:T; % discrete time log
@@ -64,7 +64,7 @@ Hc = 10;
 % Cost weights for cost function
 Q = diag([3 3 2 4 4 3]); % 6x6 weight for tracking_cost
 R = diag([5 5 4]);       % 3x3 weight for control_cost
-Rd = diag([1 1 0.5]);    % 3x3 weight for dU_cost             
+Rd = diag([2 2 1]);     % 3x3 weight for dU_cost             
 
 % Constraints & bounds for optimization (fmincon)
 umin_xy = -10; umax_xy = 10;
@@ -92,6 +92,9 @@ for k = 1:N
     % reference sample at time k
     r_k = ref_state_circle(tk1);
 
+    % wind disturbances
+    Vw_d(k) = wind_disturbances(ss0, params);
+
     % PID
     % [ax, ay, ah, pid_errors] = pid_controller(cs0, r_k, Ts, pid_errors);
 
@@ -100,23 +103,18 @@ for k = 1:N
 
     % MPC
     t = (k-1)*Ts;
-    r_prev = ref_state_circle(t); % 9x1
-    a_ref_prev = r_prev(7:9); % 3x1
+    ref_prev = ref_state_circle(t); % 9x1
+    a_ref_prev = ref_prev(7:9); % 3x1
     ref_mpc = mpc_ref_window(t, Hp, Ts, @ref_state_circle);
     [ax, ay, ah, U0, J, exitflag, output] = ...
-         mpc_controller(cs0, ref_mpc, A, B, Q, R, Rd, Hp, Hc, lb, ub, U0, u_prev, a_ref_prev);
+    mpc_controller(params, cs0, ref_mpc, A, B, Q, R, Rd, Hp, Hc, lb, ub, U0, Vw_d(k), u_prev, a_ref_prev);
+    J_k(k) = J;
+    exitflag_k(k) = exitflag;
 
     % apply accelarations & control storage
     u_k = [ax ay ah];
     U_d(k,:) = u_k;
     u_prev = u_k';
-
-    % mpc_cost_func logs
-    J_k(k) = J;
-    exitflag_k(k) = exitflag;
-
-    % wind disturbances
-    Vw_d(k) = wind_disturbances(ss0, params);
 
     % UAV Dynamics
     ode_fun = @(t,s) uav_dynamics(t, s, u_k, Vw_d(k), params);
@@ -145,7 +143,7 @@ end
 logs = uav_datalog(t_total, S_total, tk, U_d, Vw_d, @ref_state_circle, params);
 
 % performance metrics
-metrics = performance_metrics(t_total, Ts, logs)
+metrics = performance_metrics(t_total, Ts, logs);
 
 % plots
 plots_func(t_total, logs, metrics, J_k, exitflag_k);

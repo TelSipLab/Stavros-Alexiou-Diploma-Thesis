@@ -1,5 +1,5 @@
 function [ax, ay, ah, U0out, J, exitflag, output] = ...
-    mpc_controller(cs0, r, A, B, Q, R, Rd, Hp, Hc, lb, ub, U0, u_prev, a_ref_prev)
+    mpc_controller(params, cs0, r, A, B, Q, R, Rd, Hp, Hc, lb, ub, U0, Vw, u_prev, a_ref_prev)
 
     % Dimensions
     nu = size(B,2); % nu = 3
@@ -11,15 +11,18 @@ function [ax, ay, ah, U0out, J, exitflag, output] = ...
     options = optimoptions('fmincon', 'Display', 'none', ...
                                       'Algorithm', 'sqp');
 
-    % state constraints
-    Smin = [-500; -500; 60; -30; -30; -3];
-    Smax = [500; 500; 120; 30; 30; 3];
-    state_constraints = @(U) mpc_state_constraints(U, cs0, A, B, Hp, Hc, Smin, Smax);
+    % mpc constraints
+    CSmin = [-200; -200; 60; -30; -30; -3]; % x y h dx dy dh
+    CSmax = [200; 200; 120; 30; 30; 3];
+    Th_min = 0;
+
+    constraints = @(U) mpc_constraints(U, cs0, A, B, Hp, Hc, ...
+                                    CSmin, CSmax, Vw, params, Th_min);
 
     % minimazation problem
     [U_opt, J, exitflag, output] = fmincon(cost_fun, U0, ...
                                            [], [], [], [], ...
-                                           lb, ub, state_constraints, options);
+                                           lb, ub, constraints, options);
     % apply first control input
     u0 = U_opt(1:nu);
     ax = u0(1);

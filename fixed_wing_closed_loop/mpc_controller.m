@@ -12,12 +12,7 @@ function [ax, ay, ah, U0out, J, exitflag, output] = ...
                                       'Algorithm', 'sqp');
 
     % mpc constraints
-    CSmin = [-200; -200; 60; -30; -30; -3]; % x y h dx dy dh
-    CSmax = [200; 200; 120; 30; 30; 3];
-    Th_min = 0;
-
-    constraints = @(U) mpc_constraints(U, cs0, A, B, Hp, Hc, ...
-                                    CSmin, CSmax, Vw, params, Th_min);
+    constraints = @(U) mpc_constraints(U, cs0, A, B, Hp, Hc, Vw, params);
 
     % minimazation problem
     [U_opt, J, exitflag, output] = fmincon(cost_fun, U0, ...

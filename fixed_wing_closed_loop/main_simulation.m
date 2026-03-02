@@ -1,29 +1,29 @@
 clc; clear; close all;
 
-% UAV parameters
+% uav parameters
 params = uav_params();
 
-% Initial UAV conditions
+% initial UAV conditions
 x0 = 0;
 y0 = 0; 
-h0 = 60;
+h0 = 70;
 Vg0 = 30; 
 gamma0 = 0; 
 psi0 = 0;
-dx0 = Vg0 * cos(gamma0) * cos(psi0);
-dy0 = Vg0 * cos(gamma0) * sin(psi0);
-dh0 = Vg0 * sin(gamma0);
 
 % initial system state vector
 ss0 = [x0; y0; h0; Vg0; gamma0; psi0];
 
 % initial control state vector
+dx0 = Vg0*cos(gamma0)*cos(psi0);
+dy0 = Vg0*cos(gamma0)*sin(psi0);
+dh0 = Vg0*sin(gamma0);
 cs0 = [x0; y0; h0; dx0; dy0; dh0];
 
-% Simulation Parameteres
-T = 30; % simulation time
-Ts = 0.1; % sampling time
-N = T/Ts; % total samples
+% simulation Parameteres
+T = 20;      % simulation time
+Ts = 0.1;    % sampling time
+N = T/Ts;    % total samples
 tk = 0:Ts:T; % discrete time log
 
 %% PID Setup
@@ -64,7 +64,7 @@ Hc = 10;
 % Cost weights for cost function
 Q = diag([3 3 2 4 4 3]); % 6x6 weight for tracking_cost
 R = diag([5 5 4]);       % 3x3 weight for control_cost
-Rd = diag([2 2 1]);     % 3x3 weight for dU_cost             
+Rd = diag([2 2 1]);      % 3x3 weight for dU_cost             
 
 % Constraints & bounds for optimization (fmincon)
 umin_xy = -10; umax_xy = 10;

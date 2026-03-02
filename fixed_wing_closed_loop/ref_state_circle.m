@@ -4,7 +4,7 @@ function ref = ref_state_circle(t)
     C = [0; 0]; % circle center (x,y)
     z = 80; % height
     R = 100; % radius
-    omega = 0.3; % angular speed
+    omega = 0.2; % angular speed
 
     % reference state
     x = C(1) + R*sin(omega*t);

@@ -1,6 +1,6 @@
 function [C, Ceq] = mpc_constraints(U, cs0, A, B, Hp, Hc, Vw, params)
 
-% mpc control state constraints
+% mpc control state constraints (x, y, h, dx, dy, dh)
 CSmin = [-200; -200; 60; -30; -30; -3];
 CSmax = [200; 200; 120; 30; 30; 3];
 

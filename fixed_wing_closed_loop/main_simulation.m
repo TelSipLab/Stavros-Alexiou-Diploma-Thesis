@@ -4,12 +4,8 @@ clc; clear; close all;
 params = uav_params();
 
 % initial UAV conditions
-x0 = 0;
-y0 = 0; 
-h0 = 70;
-Vg0 = 30; 
-gamma0 = 0; 
-psi0 = 0;
+x0 = 0; y0 = 0; h0 = 70;
+Vg0 = 30; gamma0 = 0; psi0 = 0;
 
 % initial system state vector
 ss0 = [x0; y0; h0; Vg0; gamma0; psi0];
@@ -21,7 +17,7 @@ dh0 = Vg0*sin(gamma0);
 cs0 = [x0; y0; h0; dx0; dy0; dh0];
 
 % simulation Parameteres
-T = 20;      % simulation time
+T = 10;      % simulation time
 Ts = 0.1;    % sampling time
 N = T/Ts;    % total samples
 tk = 0:Ts:T; % discrete time log
@@ -62,13 +58,13 @@ Hp = 10;
 Hc = 10;
 
 % Cost weights for cost function
-Q = diag([3 3 2 4 4 3]); % 6x6 weight for tracking_cost
-R = diag([5 5 4]);       % 3x3 weight for control_cost
-Rd = diag([2 2 1]);      % 3x3 weight for dU_cost             
+Q = diag([5 5 5 1 1 1]); % 6x6 weight for tracking_cost
+R = diag([0.1 0.1 0.1]);       % 3x3 weight for control_cost
+Rd = diag([0.5 0.5 0.5]);      % 3x3 weight for dU_cost             
 
 % Constraints & bounds for optimization (fmincon)
-umin_xy = -10; umax_xy = 10;
-umin_h = -10; umax_h = 10;
+umin_xy = -5; umax_xy = 5;
+umin_h = -5; umax_h = 5;
 lb = repmat([umin_xy; umin_xy; umin_h], Hc, 1);
 ub = repmat([umax_xy; umax_xy; umax_h], Hc, 1);
 

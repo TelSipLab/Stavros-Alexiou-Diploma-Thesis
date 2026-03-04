@@ -15,11 +15,6 @@ hdot = Vg .* sin(gamma);
 % controller outputs
 xddot = logs.U(:,1); yddot = logs.U(:,2); hddot = logs.U(:,3);
 
-% Th, ng & phib
-Th = logs.Th;
-ng = logs.ng;
-phib = logs.phib;
-
 %% UAV Constraints
 C = uav_constraints();
 
@@ -37,13 +32,13 @@ legend('UAV','Reference','Start','End','Location','best');
 figure;
 
 % uav position (x,y,h)
-subplot(6,1,1); plot(t, x,'b','LineWidth',1.4); grid on; ylabel('x [m]'); 
+subplot(6,1,1); plot(t, x,'b','LineWidth',1.4); grid on; ylabel('x [m]');
 title('position x');
 hold on; plot(t,rx,'g--','LineWidth',1.4); legend('x','reference');
-subplot(6,1,2); plot(t, y,'b','LineWidth',1.4); grid on; ylabel('y [m]'); 
+subplot(6,1,2); plot(t, y,'b','LineWidth',1.4); grid on; ylabel('y [m]');
 title('position y');
 hold on; plot(t,ry,'g--','LineWidth',1.4); legend('y','reference');
-subplot(6,1,3); plot(t,h,'b','LineWidth',1.4); grid on; ylabel('h [m]');  
+subplot(6,1,3); plot(t,h,'b','LineWidth',1.4); grid on; ylabel('h [m]');
 title('position h');
 hold on; plot(t,rh,'g--','LineWidth',1.4); legend('h','reference');
 
@@ -55,9 +50,9 @@ ylabel('V_g [m/s]'); title('Ground Speed');
 legend('V_g','limits'); hold off;
 
 % gamma
-subplot(6,1,5); plot(t, rad2deg(gamma),'b','LineWidth',1.4); grid on; 
-yline(C.gamma_min,'r--','LineWidth',1.4) ;
-yline(C.gamma_max,'r--','LineWidth',1.4);
+subplot(6,1,5); plot(t, rad2deg(gamma),'b','LineWidth',1.4); grid on;
+yline(rad2deg(C.gamma_min),'r--','LineWidth',1.4) ;
+yline(rad2deg(C.gamma_max),'r--','LineWidth',1.4);
 ylabel('\gamma [deg]'); title('Flight Path Angle');
 legend('\gamma','limits'); hold off;
 
@@ -65,8 +60,8 @@ legend('\gamma','limits'); hold off;
 subplot(6,1,6);
 psi_deg = mod(rad2deg(psi) + 180, 360) - 180; % psi wrap [-180,180]
 plot(t, psi_deg,'b','LineWidth',1.4); grid on;
-yline(C.psi_min,'r--', 'LineWidth',1.4);
-yline(C.psi_max,'r--','LineWidth',1.4);
+yline(rad2deg(C.psi_min),'r--', 'LineWidth',1.4);
+yline(rad2deg(C.psi_max),'r--','LineWidth',1.4);
 ylabel('\psi [deg]'); xlabel('Time [s]'); title('Heading Angle');
 legend('\psi','limits'); hold off;
 
@@ -74,85 +69,65 @@ sgtitle('UAV State Evolution');
 
 %% fig3: Velocities from logs
 figure;
-subplot(3,1,1); plot(t, xdot,'LineWidth',1.4); grid on; ylabel('\it\_x [m/s]');   
+subplot(3,1,1); plot(t, xdot,'LineWidth',1.4); grid on; ylabel('\it\_x [m/s]');
 title('Velocities');
 subplot(3,1,2); plot(t, ydot,'LineWidth',1.4); grid on; ylabel('\it\_y [m/s]' );
-subplot(3,1,3); plot(t, hdot,'LineWidth',1.4); grid on; ylabel('\it\_h [m/s]'); 
+subplot(3,1,3); plot(t, hdot,'LineWidth',1.4); grid on; ylabel('\it\_h [m/s]');
 xlabel('Time [s]');
 
 %% fig4: Accelerations (controller outputs)
 figure;
-subplot(3,1,1); plot(t, xddot, 'LineWidth',1.4); grid on; ylabel('\it\_x [m/s^2]'); 
+subplot(3,1,1); plot(t, xddot, 'LineWidth',1.4); grid on; ylabel('\it\_x [m/s^2]');
 title('Accelerations (controller outputs)');
 subplot(3,1,2); plot(t, yddot,'LineWidth',1.4); grid on; ylabel('\it\_y [m/s^2]');
-subplot(3,1,3); plot(t, hddot, 'LineWidth',1.4); grid on; ylabel('\it\_h [m/s^2]'); 
+subplot(3,1,3); plot(t, hddot, 'LineWidth',1.4); grid on; ylabel('\it\_h [m/s^2]');
 xlabel('Time [s]');
 
 %% fig5: Th, ng, phib
 figure;
+Th = logs.Th_d_zoh;
+ng = logs.ng_d_zoh;
+phib = logs.phib_d_zoh;
 
 % Th
-subplot(3,1,1); plot(t, Th, 'LineWidth',1.4);
-grid on; hold on;
+subplot(3,1,1);
+plot(t, Th, 'LineWidth', 1.4); grid on; hold on;
 yline(C.Th_min,'r--','LineWidth',1.4);
 yline(C.Th_max,'r--','LineWidth',1.4);
-ylabel('T_h [N]');  title('Engine Thrust');
-legend('T_h','limits'); hold off;
+ylabel('T_h [N]'); title('Engine Thrust');
+legend('T_h','limits','Location','best');
+hold off;
 
 % ng
-subplot(3,1,2); plot(t, ng, 'LineWidth',1.4); 
-grid on; hold on;
+subplot(3,1,2);
+plot(t, ng, 'LineWidth', 1.4); grid on; hold on;
 yline(C.ng_min,'r--','LineWidth',1.4);
 yline(C.ng_max,'r--','LineWidth',1.4);
-ylabel('n_g [G]'); title('G Load');
-legend('n_g','limits'); hold off;
+ylabel('n_g [G]'); title('G-load');
+legend('n_g','limits','Location','best');
+hold off;
 
 % phib
-subplot(3,1,3); plot(t, rad2deg(phib), 'LineWidth',1.4); 
-grid on; hold on;
-yline(C.phib_min,'r--','LineWidth',1.4);
-yline(C.phib_max,'r--','LineWidth',1.4);
-ylabel(' \phi_b [deg]'); xlabel('Time [s]'); title('Bank angle');
-legend('\phi_b','limits'); hold off;
+subplot(3,1,3);
+plot(t, rad2deg(phib), 'LineWidth', 1.4); grid on; hold on;
+yline(rad2deg(C.phib_min),'r--','LineWidth',1.4);
+yline(rad2deg(C.phib_max),'r--','LineWidth',1.4);
+ylabel('\phi_b [deg]'); xlabel('Time [s]'); title('Bank Angle');
+legend('\phi_b','limits','Location','best');
+hold off;
 
 %% fig6: Euclidean Distance Evolution
 figure;
 plot(t, metrics.ED,'LineWidth',1.4); grid on;
-ylabel('Euclidean Distance'); xlabel('Time [s]'); 
+ylabel('Euclidean Distance'); xlabel('Time [s]');
 title('Euclidian Distance Evolution');
 
-%% fig7: 
+%% fig7:
 figure; plot(J_k); grid on;
 title('Objective value J over time'); xlabel('k'); ylabel('J');
 
 %% fig8:
 figure; stairs(exitflag_k); grid on;
 title('exitflag value over time'); xlabel('k'); ylabel('exitflag');
-
-%% fig7: Closed-loop poles for x-y axis
-% k1 = Kxy(1); k2 = Kxy(2);
-% Acl = [0 1; -k1 -k2];
-% p = eig(Acl);
-% 
-% figure; hold on; grid on; box on;
-% plot(real(p), imag(p), 'x', 'MarkerSize',12,'LineWidth',2);
-% xlabel('Re'); ylabel('Im'); title('Closed-loop poles for x-y axis');
-% xl = xlim; yl = ylim;
-% plot([xl(1) xl(2)], [0 0], 'k-'); % Re axis
-% plot([0 0], [yl(1) yl(2)], 'k-'); % Im axis
-% legend('Poles');
-
-%% fig8: Closed-loop poles for x-y axis
-% k1 = Kz(1); k2 = Kz(2);
-% Acl = [0 1; -k1 -k2];
-% p = eig(Acl);
-% 
-% figure; hold on; grid on; box on;
-% plot(real(p), imag(p), 'x', 'MarkerSize',12,'LineWidth',2);
-% xlabel('Re'); ylabel('Im'); title('Closed-loop poles for z axis');
-% xl = xlim; yl = ylim;
-% plot([xl(1) xl(2)], [0 0], 'k-'); % Re axis
-% plot([0 0], [yl(1) yl(2)], 'k-'); % Im axis
-% legend('Poles');
 
 end

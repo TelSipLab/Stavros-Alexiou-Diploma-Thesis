@@ -2,30 +2,30 @@ function C = uav_constraints()
 
 %% real controller output constraints
 
-% thrust
-C.Th_min = 2;
+% thrust [N]
+C.Th_min = 4;
 C.Th_max = 120;
 
-% g-load
+% g-load [G]
 C.ng_min = 0.1;
 C.ng_max = 2;
 
-% banking angle
-C.phib_min = -30; 
-C.phib_max = 30;
+% banking angle [rad]
+C.phib_min = deg2rad(-30); 
+C.phib_max = deg2rad(30);
 
-%% system state constraints
+%% system state constraints ???
 
-% ground speed
+% ground speed [m/s]
 C.Vg_min = 25;
 C.Vg_max = 35;
 
-% flight path angle
-C.gamma_max = 15;
-C.gamma_min = -15;
+% flight path angle [rad]
+C.gamma_max = deg2rad(15);
+C.gamma_min = deg2rad(-15);
 
-% heading angle
-C.psi_max = 15;
-C.psi_min = -15;
+% heading angle [rad]
+C.psi_max = deg2rad(15);
+C.psi_min = deg2rad(-15);
 
 end

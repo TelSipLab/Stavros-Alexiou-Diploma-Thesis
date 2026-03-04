@@ -3,7 +3,7 @@ function C = uav_constraints()
 %% real controller output constraints
 
 % thrust [N]
-C.Th_min = 4;
+C.Th_min = 1;
 C.Th_max = 120;
 
 % g-load [G]

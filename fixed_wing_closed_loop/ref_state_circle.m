@@ -17,6 +17,16 @@ function ref = ref_state_circle(t)
     d2y = -R*(omega^2)*cos(omega*t);
     d2h = 0;
 
+    % x = 10*t;
+    % y = 6*t;
+    % h = z;
+    % dx = 10;
+    % dy = 6;
+    % dh = 0;
+    % d2x = 0;
+    % d2y = 0;
+    % d2h = 0;
+
     % output
     ref = [x; y; h; dx; dy; dh; d2x; d2y; d2h];
 end

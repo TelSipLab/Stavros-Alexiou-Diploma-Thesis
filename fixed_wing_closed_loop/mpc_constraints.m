@@ -6,7 +6,7 @@ CSmax = [200; 200; 120; 30; 30; 3];
 
 % mpc state prediction
 CS = mpc_state_prediction(U, cs0, A, B, Hp, Hc); % 6 x Hp+1
-CS_pred = CS(:, 2:end); % 6 x Hp
+CS_pred = CS(:, 1:end-1); % 6 x Hp
 
 % state bounds 
 cmax = CS_pred - CSmax; % 6 x Hp
@@ -42,7 +42,7 @@ C_phib = [phib(:) - con.phib_max; con.phib_min - phib(:)];
 C_control = [C_Th; C_ng; C_phib];
 
 % total mpc constraints vector
-C = [C_state; C_control];
+C = [C_control];
 Ceq = [];
 
 end

@@ -4,8 +4,8 @@ clc; clear; close all;
 params = uav_params();
 
 % initial UAV conditions
-x0 = 0; y0 = 80; h0 = 80;
-Vg0 = 15; gamma0 = 0; psi0 = deg2rad(10);
+x0 = -20; y0 = -20; h0 = 70;
+Vg0 = 27; gamma0 = deg2rad(0); psi0 = deg2rad(0);
 
 % initial system state vector
 ss0 = [x0; y0; h0; Vg0; gamma0; psi0];
@@ -17,7 +17,7 @@ dh0 = Vg0*sin(gamma0);
 cs0 = [x0; y0; h0; dx0; dy0; dh0];
 
 % simulation Parameteres
-T = 15;      % simulation time
+T = 120;      % simulation time
 Ts = 0.1;    % sampling time
 N = T/Ts;    % total samples
 tk = 0:Ts:T; % discrete time log
@@ -76,6 +76,7 @@ U0 = zeros(3*Hc,1); % first control signal guess for mpc
 u_prev = zeros(3,1); % for dU in mpc_cost_func
 J_k = zeros(N,1); % mpc_cost_func value log
 exitflag_k = zeros(N,1); % exitflag mpc_cost_func log
+eucl_dist_prev = 0;
 
 %% Main Simulation Loop
 for k = 1:N
@@ -86,7 +87,7 @@ for k = 1:N
     Tspan = [tk1 tk2];
 
     % reference sample at time k
-    r_k = ref_state_circle(tk1);
+    r_k = ref_state_complex(tk1);
 
     % wind disturbances
     Vw_d(k) = wind_disturbances(ss0, params);
@@ -99,9 +100,9 @@ for k = 1:N
 
     % MPC
     t = (k-1)*Ts;
-    ref_prev = ref_state_circle(t); % 9x1
+    ref_prev = ref_state_complex(t); % 9x1
     a_ref_prev = ref_prev(7:9); % 3x1
-    ref_mpc = mpc_ref_window(t, Hp, Ts, @ref_state_circle);
+    ref_mpc = mpc_ref_window(t, Hp, Ts, @ref_state_complex);
     [ax, ay, ah, U0, J, exitflag, output] = ...
     mpc_controller(params, cs0, ref_mpc, A, B, Q, R, Rd, Hp, Hc, lb, ub, U0, Vw_d(k), u_prev, a_ref_prev);
     J_k(k) = J;
@@ -125,6 +126,13 @@ for k = 1:N
     dh0 = ss0(4) * sin(ss0(5));
     cs0 = [ss0(1); ss0(2); ss0(3); dx0; dy0; dh0];
 
+    % print
+    eucl_dist = norm(cs0(1:3) - r_k(1:3));
+    eucl_dist_change = eucl_dist - eucl_dist_prev;
+    eucl_dist_prev = eucl_dist;
+    fprintf('k = %3d/%3d | J = %10.2f | exit = %2d | ed = %8.3f | ed_change = %10.3f\n', ...
+        k, N, J, exitflag, eucl_dist, eucl_dist_change);
+
     % logs
     if k == 1
         t_total = t_seg;
@@ -136,7 +144,7 @@ for k = 1:N
 end
 
 % UAV data log
-logs = uav_datalog(t_total, S_total, tk, U_d, Vw_d, @ref_state_circle, params);
+logs = uav_datalog(t_total, S_total, tk, U_d, Vw_d, @ref_state_complex, params);
 
 % performance metrics
 metrics = performance_metrics(t_total, Ts, logs);

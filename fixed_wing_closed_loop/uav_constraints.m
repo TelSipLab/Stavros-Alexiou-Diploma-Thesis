@@ -25,7 +25,7 @@ C.gamma_max = deg2rad(15);
 C.gamma_min = deg2rad(-15);
 
 % heading angle [rad]
-C.psi_max = deg2rad(15);
-C.psi_min = deg2rad(-15);
+C.psi_max = deg2rad(180);
+C.psi_min = deg2rad(-180);
 
 end

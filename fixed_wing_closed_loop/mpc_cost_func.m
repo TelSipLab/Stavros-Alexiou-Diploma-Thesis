@@ -21,7 +21,7 @@ S = mpc_state_prediction(U, cs0, A, B, Hp, Hc);
 % error calculation
 E = S(:, 2:end) - ref(1:6,:); % 6x10
 
-% tracking cost
+% tracking_cost
 Jx = E(1,:) * Q(1,1) * E(1,:).';
 Jy = E(2,:) * Q(2,2) * E(2,:).';
 Jh = E(3,:) * Q(3,3) * E(3,:).';
@@ -30,7 +30,7 @@ Jdy = E(5,:) * Q(5,5) * E(5,:).';
 Jdh = E(6,:) * Q(6,6) * E(6,:).';
 tracking_cost = Jx + Jy + Jh + Jdx + Jdy + Jdh;
 
-% control cost
+% control_cost
 Jax = (U(1,:) - ref(7,:)) * R(1,1) * (U(1,:) - ref(7,:)).';
 Jay = (U(2,:) - ref(8,:)) * R(2,2) * (U(2,:) - ref(8,:)).';
 Jah = (U(3,:) - ref(9,:)) * R(3,3) * (U(3,:) - ref(9,:)).';
@@ -42,7 +42,13 @@ Jday = (dU(2,:) - dUref(2,:)) * Rd(2,2) * (dU(2,:) - dUref(2,:)).';
 Jdah = (dU(3,:) - dUref(3,:)) * Rd(3,3) * (dU(3,:) - dUref(3,:)).';
 dU_cost = Jdax + Jday + Jdah;
 
+% jerk_cost
+Jjerk_x = dU(1,:) * 5 * dU(1,:).';
+Jjerk_y = dU(2,:) * 5 * dU(2,:).';
+Jjerk_h = dU(3,:) * 5 * dU(3,:).';
+jerk_cost = Jjerk_x + Jjerk_y + Jjerk_h;
+
 % total cost of mpc_cost_func
-J = tracking_cost + control_cost + dU_cost;
+J = tracking_cost + control_cost + dU_cost + jerk_cost;
 
 end

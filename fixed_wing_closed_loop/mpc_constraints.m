@@ -19,6 +19,7 @@ U = reshape(U, nu, Hc); % U: 3xHc (reshape due to fmincon)
 phib = zeros(1, Hp);
 ng = zeros(1, Hp);
 Th = zeros(1, Hp);
+Vg = zeros(1, Hp);
 for k = 1:Hp
      ax = U(1,k); 
      ay = U(2,k); 
@@ -26,10 +27,10 @@ for k = 1:Hp
      dx = CS_pred(4,k);
      dy = CS_pred(5,k);
      dh = CS_pred(6,k);
-     Vg = sqrt(dx^2 + dy^2 + dh^2);
-     gamma = asin(dh / Vg);
+     Vg(k) = sqrt(dx^2 + dy^2 + dh^2);
+     gamma = asin(dh / Vg(k));
      psi = atan2(dy, dx);
-     [phib(k), ng(k), Th(k), ~] = di_mapping(ax, ay, ah, psi, gamma, Vg, Vw, params);
+     [phib(k), ng(k), Th(k), ~] = di_mapping(ax, ay, ah, psi, gamma, Vg(k), Vw, params);
 end
 
 % mpc real controller output constraints
@@ -41,8 +42,11 @@ C_ng = [ng(:) - con.ng_max; con.ng_min - ng(:)];
 C_phib = [phib(:) - con.phib_max; con.phib_min - phib(:)];
 C_control = [C_Th; C_ng; C_phib];
 
+% Vg constraints
+C_Vg = [Vg(:) - con.Vg_max; con.Vg_min - Vg(:)];
+
 % total mpc constraints vector
-C = [C_control];
+C = [C_control; C_Vg];
 Ceq = [];
 
 end

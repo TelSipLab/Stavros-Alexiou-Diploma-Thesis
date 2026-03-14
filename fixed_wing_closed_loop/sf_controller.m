@@ -15,7 +15,7 @@ function [ax, ay, ah, Kxy, Kh] = sf_controller(cs, r)
     eh1 = h - rh; eh2 = dh - rdh;
 
     % pole placement using physical parameters (x-y axis)
-    Ts = 10; % settling time (sec)
+    Ts = 15; % settling time (sec)
     zeta = 1; % damping ratio
     wn = 4.04/(zeta*Ts); % wn using the +-2% criterion
     k1 = wn^2;
@@ -29,20 +29,6 @@ function [ax, ay, ah, Kxy, Kh] = sf_controller(cs, r)
     k1 = wn^2;
     k2 = 2*zeta*wn;
     Kh = [k1 k2];
-
-    % % dirrect pole placement (x-y axis)
-    % p1 = -0.7;
-    % p2 = -0.7;
-    % k1 = p1*p2;
-    % k2 = -(p1+p2);
-    % Kxy = [k1 k2];
-
-    % % dirrect pole placement (h axis)
-    % p1 = -0.4;
-    % p2 = -0.4;
-    % k1 = p1*p2;
-    % k2 = -(p1+p2);
-    % Kh = [k1 k2];
 
     % calculate controller output
     ax = -Kxy * [ex1; ex2] + rd2x;

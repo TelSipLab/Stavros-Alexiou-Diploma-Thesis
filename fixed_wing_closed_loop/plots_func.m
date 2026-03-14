@@ -60,10 +60,8 @@ legend('\gamma','limits'); hold off;
 subplot(6,1,6);
 psi_deg = mod(rad2deg(psi) + 180, 360) - 180; % psi wrap [-180,180]
 plot(t, psi_deg,'b','LineWidth',1.4); grid on;
-yline(rad2deg(C.psi_min),'r--', 'LineWidth',1.4);
-yline(rad2deg(C.psi_max),'r--','LineWidth',1.4);
 ylabel('\psi [deg]'); xlabel('Time [s]'); title('Heading Angle');
-legend('\psi','limits'); hold off;
+legend('\psi'); hold off;
 
 sgtitle('UAV State Evolution');
 

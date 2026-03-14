@@ -42,13 +42,7 @@ Jday = (dU(2,:) - dUref(2,:)) * Rd(2,2) * (dU(2,:) - dUref(2,:)).';
 Jdah = (dU(3,:) - dUref(3,:)) * Rd(3,3) * (dU(3,:) - dUref(3,:)).';
 dU_cost = Jdax + Jday + Jdah;
 
-% jerk_cost
-Jjerk_x = dU(1,:) * 5 * dU(1,:).';
-Jjerk_y = dU(2,:) * 5 * dU(2,:).';
-Jjerk_h = dU(3,:) * 5 * dU(3,:).';
-jerk_cost = Jjerk_x + Jjerk_y + Jjerk_h;
-
 % total cost of mpc_cost_func
-J = tracking_cost + control_cost + dU_cost + jerk_cost;
+J = tracking_cost + control_cost + dU_cost;
 
 end

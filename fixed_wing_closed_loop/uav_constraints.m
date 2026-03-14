@@ -14,7 +14,7 @@ C.ng_max = 2;
 C.phib_min = deg2rad(-30); 
 C.phib_max = deg2rad(30);
 
-%% system state constraints ???
+%% system state constraints
 
 % ground speed [m/s]
 C.Vg_min = 25;
@@ -22,10 +22,6 @@ C.Vg_max = 35;
 
 % flight path angle [rad]
 C.gamma_max = deg2rad(15);
-C.gamma_min = deg2rad(-15);
-
-% heading angle [rad]
-C.psi_max = deg2rad(180);
-C.psi_min = deg2rad(-180);
+C.gamma_min = deg2rad(-10);
 
 end

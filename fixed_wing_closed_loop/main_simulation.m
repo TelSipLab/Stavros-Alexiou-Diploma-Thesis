@@ -17,7 +17,7 @@ dh0 = Vg0*sin(gamma0);
 cs0 = [x0; y0; h0; dx0; dy0; dh0];
 
 % simulation Parameteres
-T = 120;      % simulation time
+T = 220;      % simulation time
 Ts = 0.1;    % sampling time
 N = T/Ts;    % total samples
 tk = 0:Ts:T; % discrete time log
@@ -63,8 +63,8 @@ R = diag([0.1 0.1 0.1]);       % 3x3 weight for control_cost
 Rd = diag([2.5 2.5 2.5]);      % 3x3 weight for dU_cost             
 
 % Constraints & bounds for optimization (fmincon)
-umin_xy = -15; umax_xy = 15;
-umin_h = -15; umax_h = 15;
+umin_xy = -5; umax_xy = 5;
+umin_h = -5; umax_h = 5;
 lb = repmat([umin_xy; umin_xy; umin_h], Hc, 1);
 ub = repmat([umax_xy; umax_xy; umax_h], Hc, 1);
 
@@ -93,20 +93,35 @@ for k = 1:N
     Vw_d(k) = wind_disturbances(ss0, params);
 
     % PID
-    % [ax, ay, ah, pid_errors] = pid_controller(cs0, r_k, Ts, pid_errors);
+    [ax, ay, ah, pid_errors] = pid_controller(cs0, r_k, Ts, pid_errors);
+    eucl_dist = norm(cs0(1:3)-r_k(1:3));
+    eucl_dist_change = eucl_dist - eucl_dist_prev;
+    eucl_dist_prev = eucl_dist;
+    fprintf('k = %4d/%4d | PID | ed = %12.6f | ed_change = %14.6f\n', ...
+        k, N, eucl_dist, eucl_dist_change);
 
     % SF
     % [ax, ay, ah, Kxy, Kz] = sf_controller(cs0, r_k);
+    % eucl_dist = norm(cs0(1:3)-r_k(1:3));
+    % eucl_dist_change = eucl_dist - eucl_dist_prev;
+    % eucl_dist_prev = eucl_dist;
+    % fprintf('k = %4d/%4d | SF | ed = %12.6f | ed_change = %14.6f\n', ...
+    %     k, N, eucl_dist, eucl_dist_change);
 
     % MPC
-    t = (k-1)*Ts;
-    ref_prev = ref_state_complex(t); % 9x1
-    a_ref_prev = ref_prev(7:9); % 3x1
-    ref_mpc = mpc_ref_window(t, Hp, Ts, @ref_state_complex);
-    [ax, ay, ah, U0, J, exitflag, output] = ...
-    mpc_controller(params, cs0, ref_mpc, A, B, Q, R, Rd, Hp, Hc, lb, ub, U0, Vw_d(k), u_prev, a_ref_prev);
-    J_k(k) = J;
-    exitflag_k(k) = exitflag;
+    % t = (k-1)*Ts;
+    % ref_prev = ref_state_complex(t); % 9x1
+    % a_ref_prev = ref_prev(7:9); % 3x1
+    % ref_mpc = mpc_ref_window(t, Hp, Ts, @ref_state_complex);
+    % [ax, ay, ah, U0, J, exitflag, output] = ...
+    % mpc_controller(params, cs0, ref_mpc, A, B, Q, R, Rd, Hp, Hc, lb, ub, U0, Vw_d(k), u_prev, a_ref_prev);
+    % J_k(k) = J;
+    % exitflag_k(k) = exitflag;
+    % eucl_dist = norm(cs0(1:3)-r_k(1:3));
+    % eucl_dist_change = eucl_dist - eucl_dist_prev;
+    % eucl_dist_prev = eucl_dist;
+    % fprintf('k = %4d/%4d | MPC | J = %14.6f | exit = %2d | ed = %12.6f | ed_change = %14.6f\n', ...
+    %     k, N, J, exitflag, eucl_dist, eucl_dist_change);
 
     % apply accelarations & control storage
     u_k = [ax ay ah];
@@ -125,13 +140,6 @@ for k = 1:N
     dy0 = ss0(4) * cos(ss0(5)) * sin(ss0(6));
     dh0 = ss0(4) * sin(ss0(5));
     cs0 = [ss0(1); ss0(2); ss0(3); dx0; dy0; dh0];
-
-    % print
-    eucl_dist = norm(cs0(1:3) - r_k(1:3));
-    eucl_dist_change = eucl_dist - eucl_dist_prev;
-    eucl_dist_prev = eucl_dist;
-    fprintf('k = %3d/%3d | J = %10.2f | exit = %2d | ed = %8.3f | ed_change = %10.3f\n', ...
-        k, N, J, exitflag, eucl_dist, eucl_dist_change);
 
     % logs
     if k == 1

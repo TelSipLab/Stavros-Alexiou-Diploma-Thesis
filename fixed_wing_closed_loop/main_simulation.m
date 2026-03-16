@@ -58,9 +58,9 @@ Hp = 20;
 Hc = 20;
 
 % Cost weights for cost function
-Q = diag([5 5 30 1 1 2]); % 6x6 weight for tracking_cost
+Q = diag([10 10 60 1 1 12]); % 6x6 weight for tracking_cost
 R = diag([0.1 0.1 0.1]);       % 3x3 weight for control_cost
-Rd = diag([2.5 2.5 2.5]);      % 3x3 weight for dU_cost             
+Rd = diag([1 1 5]);      % 3x3 weight for dU_cost             
 
 % Constraints & bounds for optimization (fmincon)
 umin_xy = -5; umax_xy = 5;
@@ -68,15 +68,25 @@ umin_h = -5; umax_h = 5;
 lb = repmat([umin_xy; umin_xy; umin_h], Hc, 1);
 ub = repmat([umax_xy; umax_xy; umax_h], Hc, 1);
 
+% da constraints
+da_min = -5; da_max = 5;
+da_con = [da_min; da_max];
+
+% contractive mpc
+alpha = 0.8;
+
 %% prealloc
 rng(1); % seed for randn in wind_disturbances
 Vw_d = zeros(N,1); % wind log alloc
 U_d = zeros(N,3); % control log alloc
 U0 = zeros(3*Hc,1); % first control signal guess for mpc
 u_prev = zeros(3,1); % for dU in mpc_cost_func
-J_k = zeros(N,1); % mpc_cost_func value log
-exitflag_k = zeros(N,1); % exitflag mpc_cost_func log
+J = zeros(N,1); % mpc_cost_func value log
+exitflag = zeros(N,1); % exitflag mpc_cost_func log
 eucl_dist_prev = 0;
+C_Vx = zeros(N,1);
+C_Vy = zeros(N,1);
+C_Vh = zeros(N,1);
 
 %% Main Simulation Loop
 for k = 1:N
@@ -87,18 +97,18 @@ for k = 1:N
     Tspan = [tk1 tk2];
 
     % reference sample at time k
-    r_k = ref_state_complex(tk1);
+    r_k = ref_state_hippodrome(tk1);
 
     % wind disturbances
     Vw_d(k) = wind_disturbances(ss0, params);
 
     % PID
-    [ax, ay, ah, pid_errors] = pid_controller(cs0, r_k, Ts, pid_errors);
-    eucl_dist = norm(cs0(1:3)-r_k(1:3));
-    eucl_dist_change = eucl_dist - eucl_dist_prev;
-    eucl_dist_prev = eucl_dist;
-    fprintf('k = %4d/%4d | PID | ed = %12.6f | ed_change = %14.6f\n', ...
-        k, N, eucl_dist, eucl_dist_change);
+    % [ax, ay, ah, pid_errors] = pid_controller(cs0, r_k, Ts, pid_errors);
+    % eucl_dist = norm(cs0(1:3)-r_k(1:3));
+    % eucl_dist_change = eucl_dist - eucl_dist_prev;
+    % eucl_dist_prev = eucl_dist;
+    % fprintf('k = %4d/%4d | PID | ed = %12.6f | ed_change = %14.6f\n', ...
+    %     k, N, eucl_dist, eucl_dist_change);
 
     % SF
     % [ax, ay, ah, Kxy, Kz] = sf_controller(cs0, r_k);
@@ -109,19 +119,23 @@ for k = 1:N
     %     k, N, eucl_dist, eucl_dist_change);
 
     % MPC
-    % t = (k-1)*Ts;
-    % ref_prev = ref_state_complex(t); % 9x1
-    % a_ref_prev = ref_prev(7:9); % 3x1
-    % ref_mpc = mpc_ref_window(t, Hp, Ts, @ref_state_complex);
-    % [ax, ay, ah, U0, J, exitflag, output] = ...
-    % mpc_controller(params, cs0, ref_mpc, A, B, Q, R, Rd, Hp, Hc, lb, ub, U0, Vw_d(k), u_prev, a_ref_prev);
-    % J_k(k) = J;
-    % exitflag_k(k) = exitflag;
-    % eucl_dist = norm(cs0(1:3)-r_k(1:3));
-    % eucl_dist_change = eucl_dist - eucl_dist_prev;
-    % eucl_dist_prev = eucl_dist;
-    % fprintf('k = %4d/%4d | MPC | J = %14.6f | exit = %2d | ed = %12.6f | ed_change = %14.6f\n', ...
-    %     k, N, J, exitflag, eucl_dist, eucl_dist_change);
+    t = (k-1)*Ts;
+    ref_prev = ref_state_hippodrome(t);
+    a_ref_prev = ref_prev(7:9);
+    ref_mpc = mpc_ref_window(t, Hp, Ts, @ref_state_hippodrome);
+
+    [ax, ay, ah, U0, U_opt, J(k), exitflag(k), output] = ...
+    mpc_controller(params, cs0, ref_mpc, A, B, Q, R, Rd, Hp, Hc, lb, ub, ...
+    da_con, alpha, U0, Vw_d(k), u_prev, a_ref_prev);
+
+    CS = mpc_state_prediction(U_opt, cs0, A, B, Hp, Hc);
+    [C_Vx(k), C_Vy(k), C_Vh(k)] = mpc_contractive_constraints(cs0, ref_mpc, CS, alpha);
+
+    eucl_dist = norm(cs0(1:3)-r_k(1:3));
+    eucl_dist_change = eucl_dist - eucl_dist_prev;
+    eucl_dist_prev = eucl_dist;
+    fprintf('k = %4d/%4d | MPC | J = %14.6f | exit = %2d | ed = %12.6f | ed_change = %14.6f\n', ...
+        k, N, J(k), exitflag(k), eucl_dist, eucl_dist_change);
 
     % apply accelarations & control storage
     u_k = [ax ay ah];
@@ -152,10 +166,11 @@ for k = 1:N
 end
 
 % UAV data log
-logs = uav_datalog(t_total, S_total, tk, U_d, Vw_d, @ref_state_complex, params);
+logs = uav_datalog(t_total, S_total, tk, U_d, Vw_d, @ref_state_hippodrome, params);
 
 % performance metrics
-metrics = performance_metrics(t_total, Ts, logs);
+metrics = performance_metrics(t_total, Ts, logs)
+contractive_con_check = [max(C_Vx); max(C_Vy); max(C_Vh)]
 
 % plots
-plots_func(t_total, logs, metrics, J_k, exitflag_k);
+plots_func(t_total, logs, metrics, J, exitflag);

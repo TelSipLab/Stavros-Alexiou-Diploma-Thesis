@@ -1,4 +1,4 @@
-function ref = ref_state_complex(t)
+function ref = ref_state_hippodrome(t)
 
 % trajectory parameters
 vc = 32;         % cruising speed [m/s]

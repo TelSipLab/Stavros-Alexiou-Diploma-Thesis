@@ -1,20 +1,20 @@
-function [ax, ay, ah, U0out, J, exitflag, output] = ...
-    mpc_controller(params, cs0, r, A, B, Q, R, Rd, Hp, Hc, lb, ub, U0, Vw, u_prev, a_ref_prev)
+function [ax, ay, ah, U0out, U_opt, J, exitflag, output] = ...
+    mpc_controller(params, cs0, ref, A, B, Q, R, Rd, Hp, Hc, lb, ub, da_con, alpha, U0, Vw, u_prev, a_ref_prev)
 
-    % Dimensions
+    % dimensions
     nu = size(B,2); % nu = 3
 
-    % cost function definition using only U
-    cost_fun = @(U) mpc_cost_func(U, u_prev, cs0, A, B, Q, R, Rd, Hp, Hc, r, a_ref_prev);
+    % cost function definition
+    cost_fun = @(U) mpc_cost_func(U, u_prev, cs0, A, B, Q, R, Rd, Hp, Hc, ref, a_ref_prev);
+
+    % mpc constraints definition
+    constraints = @(U) mpc_constraints(U, u_prev, cs0, ref, A, B, Hp, Hc, da_con, alpha, Vw, params);
 
     % fmincon settings
     options = optimoptions('fmincon', 'Display', 'none', ...
                                       'Algorithm', 'sqp');
 
-    % mpc constraints
-    constraints = @(U) mpc_constraints(U, cs0, A, B, Hp, Hc, Vw, params);
-
-    % minimazation problem
+    % fmincon call (minimazation problem)
     [U_opt, J, exitflag, output] = fmincon(cost_fun, U0, ...
                                            [], [], [], [], ...
                                            lb, ub, constraints, options);

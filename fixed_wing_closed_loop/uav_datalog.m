@@ -17,7 +17,7 @@ logs.xdot = Vg .* cos(gamma) .* cos(psi);
 logs.ydot = Vg .* cos(gamma) .* sin(psi);
 logs.hdot = Vg .* sin(gamma);
 
-% continuous reference log (r(t))
+% continuous reference position log (r(t))
 ref_cont = zeros(N,3);
  for i = 1:N
     r = ref_fun(t_all(i));
@@ -25,7 +25,15 @@ ref_cont = zeros(N,3);
  end
 logs.ref_cont = ref_cont;
 
-% sampled reference log (r(tk))
+% continuous reference velocities log (r'(t))
+ref_vel_cont = zeros(N,3);
+for i = 1:N
+    r = ref_fun(t_all(i));
+    ref_vel_cont(i,:) = r(4:6).';
+end
+logs.ref_vel_cont = ref_vel_cont;
+
+% sampled reference position log (r(tk))
 ref_samp = zeros(K,3);
  for k = 1:K
     r = ref_fun(tk(k));
@@ -33,9 +41,21 @@ ref_samp = zeros(K,3);
  end
 logs.ref_samp = ref_samp;
 
-% countinuous errors log
-E = [x - ref_cont(:,1), y - ref_cont(:,2), h - ref_cont(:,3)];
-logs.E = E;
+% countinuous position errors log (e1)
+e1 = [x - ref_cont(:,1), y - ref_cont(:,2), h - ref_cont(:,3)];
+logs.E = e1;
+
+% continuous velocity errors log (e2)
+e2 = [logs.xdot - ref_vel_cont(:,1), ...
+        logs.ydot - ref_vel_cont(:,2), ...
+        logs.hdot - ref_vel_cont(:,3)];
+logs.Edot = e2;
+
+% Lyapunov functions per axis
+Vx = 0.5*(e1(:,1).^2 + e2(:,1).^2); logs.Vx = Vx;
+Vy = 0.5*(e1(:,2).^2 + e2(:,2).^2); logs.Vy = Vy;
+Vh = 0.5*(e1(:,3).^2 + e2(:,3).^2); logs.Vh = Vh;
+Vtot = Vx + Vy + Vh; logs.Vtot = Vtot;
 
 % discrete controller outputs log
 logs.U_d = U_d;

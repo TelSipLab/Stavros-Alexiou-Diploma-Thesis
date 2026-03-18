@@ -17,7 +17,7 @@ dh0 = Vg0*sin(gamma0);
 cs0 = [x0; y0; h0; dx0; dy0; dh0];
 
 % simulation parameteres
-T = 220;     % simulation time
+T = 60;     % simulation time
 Ts = 0.025;    % sampling time
 N = T/Ts;    % total samples
 tk = 0:Ts:T; % discrete time log
@@ -35,9 +35,9 @@ pid_errors.eh_prev = s_ref(3) - h0;
 pid_errors.ex_int = 0; pid_errors.ey_int = 0; pid_errors.eh_int = 0;
 
 % pid gains
-Kp_x = 0.1; Ki_x = 0; Kd_x = 0.7;
-Kp_y = 0.1; Ki_y = 0; Kd_y = 0.7;
-Kp_h = 0.1; Ki_h = 0; Kd_h = 0.7;
+Kp_x = 0.1; Ki_x = 0.001; Kd_x = 0.6;
+Kp_y = 0.1; Ki_y = 0; Kd_y = 0.6;
+Kp_h = 0.1; Ki_h = 0; Kd_h = 0.6;
 pid_gains = [Kp_x; Kp_y; Kp_h; Ki_x; Ki_y; Ki_h; Kd_x; Kd_y; Kd_h];
 
 %% sf setup

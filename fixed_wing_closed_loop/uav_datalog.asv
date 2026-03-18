@@ -17,7 +17,7 @@ logs.xdot = Vg .* cos(gamma) .* cos(psi);
 logs.ydot = Vg .* cos(gamma) .* sin(psi);
 logs.hdot = Vg .* sin(gamma);
 
-% continuous reference log (r(t))
+% continuous reference position log (r(t))
 ref_cont = zeros(N,3);
 ref_vel_cont = zeros(N,3);
  for i = 1:N

@@ -4,10 +4,10 @@ function plots_func(t, logs, metrics, J_k, exitflag_k)
 x = logs.x; y = logs.y; h = logs.h;
 Vg = logs.Vg; gamma = logs.gamma; psi = logs.psi;
 
-% kynematics
-xdot = Vg .* cos(gamma) .* cos(psi);
-ydot = Vg .* cos(gamma) .* sin(psi);
-hdot = Vg .* sin(gamma);
+% velocities
+xdot = logs.xdot;
+ydot = logs.ydot;
+hdot = logs.hdot;
 
 % reference
 rx = logs.ref_cont(:,1); ry = logs.ref_cont(:,2); rh = logs.ref_cont(:,3);
@@ -121,7 +121,7 @@ hold off;
 figure;
 plot(t, metrics.ED,'LineWidth',1.4); grid on;
 ylabel('Euclidean Distance'); xlabel('Time [s]');
-title('Euclidian Distance Evolution');
+title('Euclidean Distance Evolution');
 
 %% fig7: Objective value J
 figure; plot(J_k); grid on;

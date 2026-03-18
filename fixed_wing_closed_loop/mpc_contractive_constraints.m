@@ -26,7 +26,7 @@ VxT = 0.5*(exT^2 + edxT^2);
 VyT = 0.5*(eyT^2 + edyT^2);
 VhT = 0.5*(ehT^2 + edhT^2);
 
-% contractive residuals
+% contractive constraints
 C_Vx = VxT - alpha*Vx0;
 C_Vy = VyT - alpha*Vy0;
 C_Vh = VhT - alpha*Vh0;

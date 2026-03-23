@@ -1,4 +1,4 @@
-function [C_Vx, C_Vy, C_Vh] = mpc_contractive_constraints(cs0, ref, CS, alpha)
+function C_V = mpc_contractive_constraint(cs0, ref, CS, alpha)
 
 % current errors at tk
 ex0 = cs0(1) - ref(1,1);
@@ -16,19 +16,19 @@ edxT = CS(4,end) - ref(4,end);
 edyT = CS(5,end) - ref(5,end);
 edhT = CS(6,end) - ref(6,end);
 
-% current Lyapunov values
+% current lyapunov function values
 Vx0 = 0.5*(ex0^2 + edx0^2);
 Vy0 = 0.5*(ey0^2 + edy0^2);
 Vh0 = 0.5*(eh0^2 + edh0^2);
+V0 = Vx0 + Vy0 + Vh0;
 
-% terminal Lyapunov values
+% terminal lyapunov function values
 VxT = 0.5*(exT^2 + edxT^2);
 VyT = 0.5*(eyT^2 + edyT^2);
 VhT = 0.5*(ehT^2 + edhT^2);
+VT = VxT + VyT + VhT;
 
-% contractive constraints
-C_Vx = VxT - alpha*Vx0;
-C_Vy = VyT - alpha*Vy0;
-C_Vh = VhT - alpha*Vh0;
+% contractive constraint
+C_V = VT - alpha*V0;
 
 end

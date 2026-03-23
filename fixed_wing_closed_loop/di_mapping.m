@@ -21,13 +21,12 @@ ng_num = cos(gamma)*(ah+ga) - ...
 ng_den = ga*cos(phib);
 ng = ng_num/ng_den;
 
-% drag (xriazete gia ton ipologismo tou Th)
+% drag (Dg)
 Dg = 0.5*p*((Vg-Vw)^2)*Area*CD0 + ... 
      2*Kd*(Kn^2)*(ng^2)*(m^2)/(p*((Vg-Vw)^2)*Area);  
 
-% Thrust (Th)
+% thrust (Th)
 Th = (sin(gamma)*(ah+ga) + ... 
     cos(gamma)*(ax*cos(psi) + ay*sin(psi)))*m + Dg;
-% Th = max(Th, 0);
 
 end

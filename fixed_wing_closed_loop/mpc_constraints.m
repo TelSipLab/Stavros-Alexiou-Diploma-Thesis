@@ -45,11 +45,11 @@ dU(:,1) = U(:,1) - u_prev;
 dU(:,2:end) = U(:,2:end) - U(:,1:end-1);
 C_da = [dU(:) - da_max; da_min - dU(:)];
 
-% contractive mpc constraints
-[C_Vx, C_Vy, C_Vh] = mpc_contractive_constraints(cs0, ref, CS, alpha);
+% contractive constraint
+C_V = mpc_contractive_constraint(cs0, ref, CS, alpha);
 
 % total mpc constraints vector
-C = [C_Th; C_ng; C_phib; C_Vg; C_gamma; C_da; C_Vx; C_Vy; C_Vh];
+C = [C_Th; C_ng; C_phib; C_Vg; C_gamma; C_da; C_V];
 Ceq = [];
 
 end

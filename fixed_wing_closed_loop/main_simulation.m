@@ -18,7 +18,7 @@ cs0 = [x0; y0; h0; dx0; dy0; dh0];
 
 % simulation parameteres
 T = 220;     % simulation time
-Ts = 0.025;    % sampling time
+Ts = 0.1;  % sampling time
 N = T/Ts;    % total samples
 tk = 0:Ts:T; % discrete time log
 
@@ -74,8 +74,8 @@ Hp = 20; Hc = Hp; % trajectory tracking problem
 
 % Cost weights for cost function
 Q  = diag([1 1 1 4 4 4]);  % 6x6 weight for tracking_cost
-R  = diag([4.2 4.2 22]);     % 3x3 weight for control_cost
-Rd = diag([3 3 1.2]);        % 3x3 weight for dU_cost             
+R  = diag([4.2 4.2 22]);   % 3x3 weight for control_cost
+Rd = diag([3 3 1.2]);      % 3x3 weight for dU_cost             
 
 % constraints & bounds for the optimization problem (fmincon)
 lb = repmat([-5; -5; -5], Hc, 1);  % lower bounds
@@ -121,31 +121,31 @@ for k = 1:N
     %     k, N, eucl_dist, eucl_dist_change);
 
     % % SF
-    [ax, ay, ah] = sf_controller(cs0, r_k, Kx, Ky, Kh);
-    eucl_dist = norm(cs0(1:3)-r_k(1:3));
-    eucl_dist_change = eucl_dist - eucl_dist_prev;
-    eucl_dist_prev = eucl_dist;
-    fprintf('k = %4d/%4d | SF | ed = %12.6f | ed_change = %14.6f\n', ...
-        k, N, eucl_dist, eucl_dist_change);
-
-    % % MPC
-    % t = (k-1)*Ts;
-    % ref_prev = ref_state_hippodrome(t);
-    % a_ref_prev = ref_prev(7:9);
-    % ref_mpc = mpc_ref_window(t, Hp, Ts, @ref_state_hippodrome);
-    % 
-    % [ax, ay, ah, U0, U_opt, J(k), exitflag(k), output] = ...
-    % mpc_controller(params, cs0, ref_mpc, A, B, Q, R, Rd, Hp, Hc, lb, ub, ...
-    % da_con, alpha, U0, Vw_d(k), u_prev, a_ref_prev);
-    % 
-    % CS = mpc_state_prediction(U_opt, cs0, A, B, Hp, Hc);
-    % C_V(k) = mpc_contractive_constraint(cs0, ref_mpc, CS, alpha);
-    % 
+    % [ax, ay, ah] = sf_controller(cs0, r_k, Kx, Ky, Kh);
     % eucl_dist = norm(cs0(1:3)-r_k(1:3));
     % eucl_dist_change = eucl_dist - eucl_dist_prev;
     % eucl_dist_prev = eucl_dist;
-    % fprintf('k = %4d/%4d | MPC | J = %14.6f | exit = %2d | ed = %12.6f | ed_change = %14.6f\n', ...
-    %     k, N, J(k), exitflag(k), eucl_dist, eucl_dist_change);
+    % fprintf('k = %4d/%4d | SF | ed = %12.6f | ed_change = %14.6f\n', ...
+    %     k, N, eucl_dist, eucl_dist_change);
+
+    % % MPC
+    t = (k-1)*Ts;
+    ref_prev = ref_state_hippodrome(t);
+    a_ref_prev = ref_prev(7:9);
+    ref_mpc = mpc_ref_window(t, Hp, Ts, @ref_state_hippodrome);
+
+    [ax, ay, ah, U0, U_opt, J(k), exitflag(k), output] = ...
+    mpc_controller(params, cs0, ref_mpc, A, B, Q, R, Rd, Hp, Hc, lb, ub, ...
+    da_con, alpha, U0, Vw_d(k), u_prev, a_ref_prev);
+
+    CS = mpc_state_prediction(U_opt, cs0, A, B, Hp, Hc);
+    C_V(k) = mpc_contractive_constraint(cs0, ref_mpc, CS, alpha);
+
+    eucl_dist = norm(cs0(1:3)-r_k(1:3));
+    eucl_dist_change = eucl_dist - eucl_dist_prev;
+    eucl_dist_prev = eucl_dist;
+    fprintf('k = %4d/%4d | MPC | J = %14.6f | exit = %2d | ed = %12.6f | ed_change = %14.6f\n', ...
+        k, N, J(k), exitflag(k), eucl_dist, eucl_dist_change);
    
     % apply accelarations & control storage
     u_k = [ax ay ah];

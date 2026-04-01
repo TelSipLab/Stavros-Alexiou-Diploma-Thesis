@@ -175,7 +175,7 @@ for k = 1:N
     end
 end
 
-%% final calculations and plots
+%% final calculations
 
 % UAV data log
 logs = uav_datalog(t_total, S_total, tk, U_d, Vw_d, @ref_state_hippodrome, params);
@@ -184,5 +184,5 @@ logs = uav_datalog(t_total, S_total, tk, U_d, Vw_d, @ref_state_hippodrome, param
 metrics = performance_metrics(t_total, Ts, logs)
 contractive_con_check = max(C_V)
 
-% plots
+%% plots
 plots_func(t_total, logs, metrics, J, exitflag);

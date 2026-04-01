@@ -1,4 +1,4 @@
-function plots_func(t, logs, metrics, J_k, exitflag_k)
+function plots_func(t, logs, metrics, J, exitflag)
 %% log extraction
 % states
 x = logs.x; y = logs.y; h = logs.h;
@@ -124,11 +124,11 @@ ylabel('Euclidean Distance'); xlabel('Time [s]');
 title('Euclidean Distance Evolution');
 
 %% fig7: Objective value J
-figure; plot(J_k); grid on;
+figure; plot(J); grid on;
 title('Objective value J over time'); xlabel('k'); ylabel('J');
 
 %% fig8: exitflag value
-figure; stairs(exitflag_k); grid on;
+figure; stairs(exitflag); grid on;
 title('exitflag value over time'); xlabel('k'); ylabel('exitflag');
 
 %% fig9: Lyapunov functions

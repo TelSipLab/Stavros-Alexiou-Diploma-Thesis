@@ -125,6 +125,7 @@ final_position_handle = plot3(uav_x_position(end), uav_y_position(end), uav_alti
 grid off;
 axis tight;
 view(38, 24);
+pbaspect([1 1 0.65]);
 xlabel('x [m]', 'FontName', figure_font_name, 'FontSize', axis_font_size, 'FontWeight', 'bold');
 ylabel('y [m]', 'FontName', figure_font_name, 'FontSize', axis_font_size, 'FontWeight', 'bold');
 zlabel('h [m]', 'FontName', figure_font_name, 'FontSize', axis_font_size, 'FontWeight', 'bold');
@@ -139,7 +140,8 @@ set(gca, 'FontName', figure_font_name, ...
     'GridColor', grid_color, ...
     'GridAlpha', 0.9, ...
     'Box', 'on', ...
-    'Layer', 'top');
+    'Layer', 'top', ...
+    'Position', [0.12 0.16 0.75 0.76]);
 
 print(trajectory_3d_figure, fullfile(output_directory, 'fig1_3d_trajectory.eps'), ...
     '-depsc', '-painters');
@@ -147,7 +149,7 @@ print(trajectory_3d_figure, fullfile(output_directory, 'fig1_3d_trajectory.eps')
 %% Figure 2: Euclidean distance evolution
 euclidean_distance_figure = figure('Color', 'w');
 set(euclidean_distance_figure, 'Units', 'centimeters');
-euclidean_distance_figure.Position(3:4) = [11 7];
+euclidean_distance_figure.Position(3:4) = [12 5];
 set(euclidean_distance_figure, 'PaperPositionMode', 'auto');
 
 plot(time_vector, euclidean_distance, ...
@@ -403,7 +405,7 @@ print(state_constraint_figure, fullfile(output_directory, 'fig4_state_constraint
 %% Figure 5: Total Lyapunov function
 lyapunov_figure = figure('Color', 'w');
 set(lyapunov_figure, 'Units', 'centimeters');
-lyapunov_figure.Position(3:4) = [11 7];
+lyapunov_figure.Position(3:4) = [12 5];
 set(lyapunov_figure, 'PaperPositionMode', 'auto');
 
 plot(time_vector, total_lyapunov_value, ...
@@ -411,6 +413,7 @@ plot(time_vector, total_lyapunov_value, ...
 grid off;
 xlim([0, time_plot_end]);
 ylim([0, 550]);
+yticks([0 500]);
 xlabel('Time [s]', 'FontName', figure_font_name, 'FontSize', axis_font_size, 'FontWeight', 'bold');
 ylabel('V(e_k)', 'FontName', figure_font_name, 'FontSize', axis_font_size, 'FontWeight', 'bold');
 title(' ', 'FontSize', title_font_size);

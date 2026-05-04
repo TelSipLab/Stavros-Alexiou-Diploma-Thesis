@@ -27,16 +27,9 @@ plot3(x, y, h, 'b-', 'LineWidth', 1.6); hold on;
 plot3(rx, ry, rh, 'g--', 'LineWidth', 1.4);
 plot3(x(1), y(1), h(1), 'go', 'MarkerSize', 9, 'MarkerFaceColor', 'g');
 plot3(x(end), y(end), h(end), 'ro', 'MarkerSize', 9, 'MarkerFaceColor', 'r');
-for i = 1:numel(obstacles)
-    [Xs, Ys, Zs] = sphere(20);
-    Xs = obst_params.r_obst*Xs + obstacles(i).pos(1);
-    Ys = obst_params.r_obst*Ys + obstacles(i).pos(2);
-    Zs = obst_params.r_obst*Zs + obstacles(i).pos(3);
-    surf(Xs, Ys, Zs, 'FaceColor', 'r', 'FaceAlpha', 0.35, 'EdgeColor', 'none');
-end
 xlabel('x [m]'); ylabel('y [m]'); zlabel('h [m]');
 title('UAV 3D Trajectory vs Reference'); grid on; axis equal;
-legend('UAV','Reference','Start','End','Obstacle','Location','best');
+legend('UAV','Reference','Start','End','Location','best');
 
 %% fig2: State Evolution + state constraints + reference
 figure;
@@ -157,5 +150,56 @@ subplot(4,1,4);
 plot(t, Vtot, 'LineWidth', 1.4); grid on;
 ylabel('V_{tot}'); xlabel('Time [s]');
 title('Total Lyapunov function');
+
+%% fig10: Obstacle collision clearance
+obst_dist = zeros(numel(t), numel(obstacles));
+for i = 1:numel(obstacles)
+    dx_obst = x - obstacles(i).pos(1);
+    dy_obst = y - obstacles(i).pos(2);
+    dh_obst = h - obstacles(i).pos(3);
+    obst_dist(:,i) = sqrt(dx_obst.^2 + dy_obst.^2 + dh_obst.^2);
+end
+
+min_obst_dist = min(obst_dist, [], 2);
+collision_bound = obst_params.r_uav + obst_params.r_obst;
+obst_clearance = min_obst_dist - collision_bound;
+
+figure;
+plot(t, obst_clearance, 'b-', 'LineWidth', 1.6); hold on;
+yline(0, 'r--', 'LineWidth', 1.4);
+grid on;
+xlim([t(1), t(end)]);
+ylim([min(-0.5, min(obst_clearance) - 0.2), max(obst_clearance) + 5]);
+xlabel('Time [sec]');
+ylabel('Distance [m]');
+title('Minimum Distance Between the UAV and Any Obstacle');
+legend('Distance to Obstacle', 'Collision Bound', 'Location', 'northeast');
+
+zoom_idx = find(obst_clearance <= 1);
+near_collision_zoom = ~isempty(zoom_idx);
+if isempty(zoom_idx)
+    [~, min_clearance_idx] = min(obst_clearance);
+    zoom_idx = max(1, min_clearance_idx-20):min(numel(t), min_clearance_idx+20);
+end
+zoom_time_min = max(t(1), t(zoom_idx(1)) - 0.5);
+zoom_time_max = min(t(end), t(zoom_idx(end)) + 0.5);
+zoom_mask = (t >= zoom_time_min) & (t <= zoom_time_max);
+
+zoom_axis = axes('Position', [0.32 0.49 0.36 0.27]);
+plot(zoom_axis, t, obst_clearance, 'b-', 'LineWidth', 1.4); hold(zoom_axis, 'on');
+yline(zoom_axis, 0, 'r--', 'LineWidth', 1.2);
+grid(zoom_axis, 'on');
+xlim(zoom_axis, [zoom_time_min, zoom_time_max]);
+zoom_clearance_min = min(obst_clearance(zoom_mask));
+zoom_clearance_max = max(obst_clearance(zoom_mask));
+if near_collision_zoom
+    ylim(zoom_axis, [min(-0.05, zoom_clearance_min - 0.05), ...
+        max(1, min(1.2, zoom_clearance_max + 0.1))]);
+else
+    zoom_clearance_margin = max(0.1, 0.05 * (zoom_clearance_max - zoom_clearance_min));
+    ylim(zoom_axis, [zoom_clearance_min - zoom_clearance_margin, ...
+        zoom_clearance_max + zoom_clearance_margin]);
+end
+hold off;
 
 end

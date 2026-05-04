@@ -1,4 +1,4 @@
-function C_V = mpc_contractive_constraint(cs0, ref, CS, alpha)
+function [C_VBF, C_tracking, C_barrier] = mpc_contractive_constraint(cs0, ref, CS, alpha, obstacles, obst_params)
 
 % current errors at tk
 ex0 = cs0(1) - ref(1,1);
@@ -28,7 +28,34 @@ VyT = 0.5*(eyT^2 + edyT^2);
 VhT = 0.5*(ehT^2 + edhT^2);
 VT = VxT + VyT + VhT;
 
-% contractive constraint
-C_V = VT - alpha*V0;
+% barrier function terms
+BF0 = 0;
+BFT = 0;
+for m = 1:numel(obstacles)
+    dim0 = norm(cs0(1:3) - obstacles(m).pos);
+    dimT = norm(CS(1:3,end) - obstacles(m).pos);
+    BF0 = BF0 + obst_params.Ko_BF * obstacle_barrier_potential(dim0, obst_params);
+    BFT = BFT + obst_params.Ko_BF * obstacle_barrier_potential(dimT, obst_params);
+end
+
+% contractive constraint with barrier function
+VBF0 = V0 + BF0;
+VBFT = VT + BFT;
+C_VBF = VBFT - alpha*VBF0;    % used constraint
+C_tracking = VT - alpha*V0;   % used only for evaluation
+C_barrier = BFT - alpha*BF0;  % ==||==
+
+end
+
+function Uo = obstacle_barrier_potential(dim, obst_params)
+
+dc = obst_params.r_min;
+rho0 = obst_params.d0_bar - dc;
+
+if dim > dc && dim <= obst_params.d0_bar
+    Uo = log(rho0^4 / (rho0^4 - (dim - obst_params.d0_bar)^4));
+else
+    Uo = 0;
+end
 
 end

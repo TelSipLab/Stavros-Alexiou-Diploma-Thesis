@@ -45,15 +45,15 @@ dU(:,1) = U(:,1) - u_prev;
 dU(:,2:end) = U(:,2:end) - U(:,1:end-1);
 C_da = [dU(:) - da_max; da_min - dU(:)];
 
-% contractive constraint
-C_V = mpc_contractive_constraint(cs0, ref, CS, alpha);
+% contractive constraint with barrier function
+C_VBF = mpc_contractive_constraint(cs0, ref, CS, alpha, obstacles, obst_params);
 
-% obstacle avoidance constraints (only when E.D. <= 200m)
+% obstacle avoidance constraints
 C_obst = [];
 for i = 1:numel(obstacles)
     obstacle = obstacles(i);
     current_dist_to_obstacle = norm(cs0(1:3) - obstacle.pos);
-    if current_dist_to_obstacle <= obst_params.dd
+    if current_dist_to_obstacle <= obst_params.ddet
         delta_uav_x_obst = CS_pred(1,:) - obstacle.pos(1);
         delta_uav_y_obst = CS_pred(2,:) - obstacle.pos(2);
         delta_uav_h_obst = CS_pred(3,:) - obstacle.pos(3);
@@ -64,7 +64,7 @@ for i = 1:numel(obstacles)
 end
 
 % total mpc constraints vector
-C = [C_Th; C_ng; C_phib; C_Vg; C_gamma; C_da; C_V; C_obst];
+C = [C_Th; C_ng; C_phib; C_Vg; C_gamma; C_da; C_obst];
 Ceq = [];
 
 end

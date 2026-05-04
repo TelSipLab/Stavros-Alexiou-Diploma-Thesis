@@ -20,7 +20,7 @@ dh0 = Vg0*sin(gamma0);
 cs0 = [x0; y0; h0; dx0; dy0; dh0];
 
 % simulation parameteres
-T = 32;     % simulation time
+T = 220;     % simulation time
 Ts = 0.1;  % sampling time
 N = T/Ts;    % total samples
 tk = 0:Ts:T; % discrete time log
@@ -73,7 +73,7 @@ B = [0 0 0;
      0 0 Ts];
 
 % prediction & control horizon
-Hp = 20; Hc = Hp; % trajectory tracking problem
+Hp = 40; Hc = Hp; % trajectory tracking problem
 
 % Cost weights for cost function
 Q  = diag([1 1 1 4 4 4]);  % 6x6 weight for tracking_cost
@@ -81,25 +81,27 @@ R  = diag([4.2 4.2 22]);   % 3x3 weight for control_cost
 Rd = diag([3 3 1.2]);      % 3x3 weight for dU_cost             
 
 % constraints & bounds for the optimization problem (fmincon)
-lb = repmat([-5; -5; -5], Hc, 1);  % lower bounds
-ub = repmat([5; 5; 5], Hc, 1);     % upper bounds
+lb = repmat([-6; -6; -6], Hc, 1);  % lower bounds
+ub = repmat([6; 6; 6], Hc, 1);     % upper bounds
 
 % da constraints
 da_min = -1; da_max = 1; da_con = [da_min; da_max];
 
 % contractive mpc
-alpha = 0.8;
+alpha = 0.9999;
 
 %% prealloc vectors before the main simulation loop
-rng(1);                 % seed for randn in wind_disturbances
-Vw_d = zeros(N,1);      % wind log alloc
-U_d = zeros(N,3);       % control log alloc
-eucl_dist_prev = 0;     % euclidian distance evaluation for printf
-U0 = zeros(3*Hc,1);     % mpc first control signal guess
-u_prev = zeros(3,1);    % mpc cost function dU 
-J = zeros(N,1);         % mpc cost function value log
-exitflag = zeros(N,1);  % mpc exitflag log
-C_V = zeros(N,1);       % mpc contractive constraint check
+rng(1);                  % seed for randn in wind_disturbances
+Vw_d = zeros(N,1);       % wind log alloc
+U_d = zeros(N,3);        % control log alloc
+eucl_dist_prev = 0;      % euclidian distance evaluation for printf
+U0 = zeros(3*Hc,1);      % mpc first control signal guess
+u_prev = zeros(3,1);     % mpc cost function dU 
+J = zeros(N,1);          % mpc cost function value log
+exitflag = zeros(N,1);   % mpc exitflag log
+C_V = zeros(N,1);        % mpc contractive constraint check
+C_tracking = zeros(N,1); % mpc tracking contractive constraint check
+C_barrier = zeros(N,1);  % mpc barrier contractive constraint check
 obst_dist_d = zeros(N, numel(obstacles)); % discrete obstacle distance log
 
 %% main simulation loop
@@ -143,7 +145,8 @@ for k = 1:N
     da_con, alpha, U0, Vw_d(k), u_prev, a_ref_prev, obstacles, obst_params);
 
     CS = mpc_state_prediction(U_opt, cs0, A, B, Hp, Hc);
-    C_V(k) = mpc_contractive_constraint(cs0, ref_mpc, CS, alpha);
+    [C_V(k), C_tracking(k), C_barrier(k)] = ...
+        mpc_contractive_constraint(cs0, ref_mpc, CS, alpha, obstacles, obst_params);
 
     for i = 1:numel(obstacles)
         obst_dist_d(k,i) = norm(cs0(1:3) - obstacles(i).pos);
@@ -184,7 +187,7 @@ for k = 1:N
     end
 end
 
-%% final calculations
+%% log and metrics
 
 % UAV data log
 logs = uav_datalog(t_total, S_total, tk, U_d, Vw_d, @ref_state_hippodrome, params);
@@ -192,8 +195,12 @@ logs = uav_datalog(t_total, S_total, tk, U_d, Vw_d, @ref_state_hippodrome, param
 % performance metrics
 metrics = performance_metrics(t_total, Ts, logs)
 contractive_con_check = max(C_V)
+tracking_con_check = max(C_tracking)
+barrier_con_check = max(C_barrier)
 
-% obstacle avoidance check
+%% obstacle avoidance evaluation
+
+% obstacle distance calculation
 obst_dist = zeros(length(t_total), numel(obstacles));
 for i = 1:numel(obstacles)
     delta_x_obst = logs.x - obstacles(i).pos(1);
@@ -202,13 +209,17 @@ for i = 1:numel(obstacles)
     obst_dist(:,i) = sqrt(delta_x_obst.^2 + delta_y_obst.^2 + delta_h_obst.^2);
 end
 
-min_obst_dist = min(obst_dist, [], 1);
-obst_clearance = min_obst_dist - obst_params.r_min;
+% minimum distance and collision clearance calculation
+[min_obst_dist, min_obst_idx] = min(obst_dist, [], 1);
+min_obst_time = t_total(min_obst_idx);
+collision_bound = obst_params.r_uav + obst_params.r_obst;
+obst_clearance = min_obst_dist - collision_bound;
 
+% obstacle avoidance summary
 fprintf('\nObstacle avoidance summary:\n');
 for i = 1:numel(obstacles)
-    fprintf('Obstacle %d | t = %8.3f s | min distance = %10.3f m | clearance = %10.3f m\n', ...
-        i, obstacles(i).t, min_obst_dist(i), obst_clearance(i));
+    fprintf('Obstacle %d | t_obst = %8.3f s | t_min = %8.3f s | min distance = %10.3f m | clearance = %10.3f m\n', ...
+        i, obstacles(i).t, min_obst_time(i), min_obst_dist(i), obst_clearance(i));
 end
 
 %% plots

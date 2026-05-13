@@ -75,6 +75,6 @@ for k = 1:Hp
 end
 
 % total cost of mpc_cost_func
-J = tracking_cost + control_cost + dU_cost + J_BF;
+J = tracking_cost + control_cost + dU_cost + J_APF;
 
 end

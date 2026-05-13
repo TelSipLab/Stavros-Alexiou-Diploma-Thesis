@@ -1,4 +1,4 @@
-function [C, Ceq] = mpc_constraints(U, u_prev, cs0, ref, A, B, Hp, Hc, da_con, alpha, Vw, params, obstacles, obst_params)
+function [C, Ceq, C_groups] = mpc_constraints(U, u_prev, cs0, ref, A, B, Hp, Hc, da_con, alpha, Vw, params, obstacles, obst_params)
 
 con = uav_constraints();
 
@@ -46,7 +46,7 @@ dU(:,2:end) = U(:,2:end) - U(:,1:end-1);
 C_da = [dU(:) - da_max; da_min - dU(:)];
 
 % contractive constraint with barrier function
-C_VBF = mpc_contractive_constraint(cs0, ref, CS, alpha, obstacles, obst_params);
+C_V = mpc_contractive_constraint(cs0, ref, CS, alpha, obstacles, obst_params);
 
 % obstacle avoidance constraints
 C_obst = [];
@@ -64,7 +64,20 @@ for i = 1:numel(obstacles)
 end
 
 % total mpc constraints vector
-C = [C_Th; C_ng; C_phib; C_Vg; C_gamma; C_da; C_obst];
+C = [C_Th; C_ng; C_phib; C_Vg; C_gamma; C_da; C_obst; C_V];
 Ceq = [];
+
+C_groups.Th = max(C_Th);
+C_groups.ng = max(C_ng);
+C_groups.phib = max(C_phib);
+C_groups.Vg = max(C_Vg);
+C_groups.gamma = max(C_gamma);
+C_groups.da = max(C_da);
+if isempty(C_obst)
+    C_groups.obst = -Inf;
+else
+    C_groups.obst = max(C_obst);
+end
+C_groups.contractive = C_V;
 
 end

@@ -73,12 +73,16 @@ B = [0 0 0;
      0 0 Ts];
 
 % prediction & control horizon
-Hp = 40; Hc = Hp; % trajectory tracking problem
+Hp = 20; Hc = Hp; % trajectory tracking problem
 
 % Cost weights for cost function
+% Q  = diag([1 1 1 4 4 4]);  % 6x6 weight for tracking_cost
+% R  = diag([4.2 4.2 22]);   % 3x3 weight for control_cost
+% Rd = diag([3 3 1.2]);      % 3x3 weight for dU_cost 
+
 Q  = diag([1 1 1 4 4 4]);  % 6x6 weight for tracking_cost
-R  = diag([4.2 4.2 22]);   % 3x3 weight for control_cost
-Rd = diag([3 3 1.2]);      % 3x3 weight for dU_cost             
+R  = diag([4 4 4]);   % 3x3 weight for control_cost
+Rd = diag([2 2 2]);      % 3x3 weight for dU_cost  
 
 % constraints & bounds for the optimization problem (fmincon)
 lb = repmat([-6; -6; -6], Hc, 1);  % lower bounds
@@ -88,20 +92,27 @@ ub = repmat([6; 6; 6], Hc, 1);     % upper bounds
 da_min = -1; da_max = 1; da_con = [da_min; da_max];
 
 % contractive mpc
-alpha = 0.9999;
+alpha = 1;
 
 %% prealloc vectors before the main simulation loop
-rng(1);                  % seed for randn in wind_disturbances
-Vw_d = zeros(N,1);       % wind log alloc
-U_d = zeros(N,3);        % control log alloc
-eucl_dist_prev = 0;      % euclidian distance evaluation for printf
-U0 = zeros(3*Hc,1);      % mpc first control signal guess
-u_prev = zeros(3,1);     % mpc cost function dU 
-J = zeros(N,1);          % mpc cost function value log
-exitflag = zeros(N,1);   % mpc exitflag log
-C_V = zeros(N,1);        % mpc contractive constraint check
-C_tracking = zeros(N,1); % mpc tracking contractive constraint check
-C_barrier = zeros(N,1);  % mpc barrier contractive constraint check
+rng(1);                     % seed for randn in wind_disturbances
+Vw_d = zeros(N,1);          % wind log alloc
+U_d = zeros(N,3);           % control log alloc
+eucl_dist_prev = 0;         % euclidian distance evaluation for printf
+U0 = zeros(3*Hc,1);         % mpc first control signal guess
+u_prev = zeros(3,1);        % mpc cost function dU 
+J = zeros(N,1);             % mpc cost function value log
+exitflag = zeros(N,1);      % mpc exitflag log
+C_V = zeros(N,1);           % mpc contractive constraint check
+C_tracking = zeros(N,1);    % mpc tracking contractive constraint check
+C_barrier = zeros(N,1);     % mpc barrier contractive constraint check
+C_Th_check = zeros(N,1);    % thrust constraint check
+C_ng_check = zeros(N,1);    % g-load constraint check
+C_phib_check = zeros(N,1);  % bank angle constraint check
+C_Vg_check = zeros(N,1);    % ground speed constraint check
+C_gamma_check = zeros(N,1); % flight path angle constraint check
+C_da_check = zeros(N,1);    % delta acceleration constraint check
+C_obst_check = zeros(N,1);  % obstacle constraint check
 obst_dist_d = zeros(N, numel(obstacles)); % discrete obstacle distance log
 
 %% main simulation loop
@@ -147,6 +158,15 @@ for k = 1:N
     CS = mpc_state_prediction(U_opt, cs0, A, B, Hp, Hc);
     [C_V(k), C_tracking(k), C_barrier(k)] = ...
         mpc_contractive_constraint(cs0, ref_mpc, CS, alpha, obstacles, obst_params);
+    [~, ~, C_groups] = mpc_constraints(U_opt, u_prev, cs0, ref_mpc, A, B, Hp, Hc, ...
+        da_con, alpha, Vw_d(k), params, obstacles, obst_params);
+    C_Th_check(k) = C_groups.Th;
+    C_ng_check(k) = C_groups.ng;
+    C_phib_check(k) = C_groups.phib;
+    C_Vg_check(k) = C_groups.Vg;
+    C_gamma_check(k) = C_groups.gamma;
+    C_da_check(k) = C_groups.da;
+    C_obst_check(k) = C_groups.obst;
 
     for i = 1:numel(obstacles)
         obst_dist_d(k,i) = norm(cs0(1:3) - obstacles(i).pos);
@@ -194,9 +214,31 @@ logs = uav_datalog(t_total, S_total, tk, U_d, Vw_d, @ref_state_hippodrome, param
 
 % performance metrics
 metrics = performance_metrics(t_total, Ts, logs)
-contractive_con_check = max(C_V)
-tracking_con_check = max(C_tracking)
-barrier_con_check = max(C_barrier)
+
+fprintf('\nMPC constraint summary (max C <= 0 means satisfied):\n');
+fprintf('Th      = %12.6f\n', max(C_Th_check));
+fprintf('ng      = %12.6f\n', max(C_ng_check));
+fprintf('phib    = %12.6f\n', max(C_phib_check));
+fprintf('Vg      = %12.6f\n', max(C_Vg_check));
+fprintf('gamma   = %12.6f\n', max(C_gamma_check));
+fprintf('da      = %12.6f\n', max(C_da_check));
+fprintf('obst    = %12.6f\n', max(C_obst_check));
+fprintf('VBF     = %12.6f\n', max(C_V));
+fprintf('tracking= %12.6f\n', max(C_tracking));
+fprintf('barrier = %12.6f\n', max(C_barrier));
+
+constraint_tol = 1e-6;
+fprintf('\nMPC constraint violation intervals (C > %.1e):\n', constraint_tol);
+print_constraint_diagnostics('Th', C_Th_check, tk(1:end-1), constraint_tol);
+print_constraint_diagnostics('ng', C_ng_check, tk(1:end-1), constraint_tol);
+print_constraint_diagnostics('phib', C_phib_check, tk(1:end-1), constraint_tol);
+print_constraint_diagnostics('Vg', C_Vg_check, tk(1:end-1), constraint_tol);
+print_constraint_diagnostics('gamma', C_gamma_check, tk(1:end-1), constraint_tol);
+print_constraint_diagnostics('da', C_da_check, tk(1:end-1), constraint_tol);
+print_constraint_diagnostics('obst', C_obst_check, tk(1:end-1), constraint_tol);
+print_constraint_diagnostics('VBF', C_V, tk(1:end-1), constraint_tol);
+print_constraint_diagnostics('tracking', C_tracking, tk(1:end-1), constraint_tol);
+print_constraint_diagnostics('barrier', C_barrier, tk(1:end-1), constraint_tol);
 
 %% obstacle avoidance evaluation
 

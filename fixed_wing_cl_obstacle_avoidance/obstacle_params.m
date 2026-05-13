@@ -10,9 +10,9 @@ obst_params.r_min = obst_params.r_uav + obst_params.r_obst ...
 % barrier functions parameters
 obst_params.ddet = 200;    % detection distance
 obst_params.d0_bar = 200;  % obstacle influence distance
-obst_params.Qo_APF = 1;    % artificial potential field weight
 obst_params.Qo_BF = 30;    % barrier function weight
-obst_params.Ko_BF = 0.01;  % contractive barrier function weight
+obst_params.Qo_APF = 0.1;  % artificial potential field weight
+obst_params.Ko_BF = 1;  % contractive barrier function weight
 
 % obstacle locations defined by time instants on the reference trajectory
 [~, traj_params] = ref_fun(0);

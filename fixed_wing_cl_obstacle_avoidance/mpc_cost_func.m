@@ -1,4 +1,4 @@
-function J = mpc_cost_func(U, u_prev, cs0, A, B, Q, R, Rd, Hp, Hc, ref, a_ref_prev, obstacles, obst_params)
+function [J, cost_terms] = mpc_cost_func(U, u_prev, cs0, A, B, Q, R, Rd, Hp, Hc, ref, a_ref_prev, obstacles, obst_params)
 
 % reshape control vector
 nu = size(B,2); % nu = 3
@@ -71,10 +71,16 @@ for k = 1:Hp
             Uo = 0;
         end
         J_BF = J_BF + obst_params.Qo_BF * Uo;
+
     end
 end
 
 % total cost of mpc_cost_func
 J = tracking_cost + control_cost + dU_cost + J_APF;
+
+cost_terms.tr_cost = tracking_cost;
+cost_terms.con_cost = control_cost;
+cost_terms.du_cost = dU_cost;
+cost_terms.apf_cost = J_APF;
 
 end

@@ -20,21 +20,29 @@ logs.hdot = Vg .* sin(gamma);
 % continuous reference log (r(t))
 ref_cont = zeros(N,3);
 ref_vel_cont = zeros(N,3);
+ref_acc_cont = zeros(N,3);
  for i = 1:N
     r = ref_fun(t_all(i));
     ref_cont(i,:) = r(1:3).';
     ref_vel_cont(i,:) = r(4:6).';
+    ref_acc_cont(i,:) = r(7:9).';
  end
 logs.ref_cont = ref_cont;
 logs.ref_vel_cont = ref_vel_cont;
+logs.ref_acc_cont = ref_acc_cont;
 
-% sampled reference position log (r(tk))
+% sampled reference log (r(tk))
 ref_samp = zeros(K,3);
+ref_acc_samp = zeros(K-1,3);
  for k = 1:K
     r = ref_fun(tk(k));
     ref_samp(k,:) = r(1:3).';
+    if k < K
+        ref_acc_samp(k,:) = r(7:9).';
+    end
  end
 logs.ref_samp = ref_samp;
+logs.ref_acc_samp = ref_acc_samp;
 
 % countinuous position errors log (e1)
 e1 = [x - ref_cont(:,1), y - ref_cont(:,2), h - ref_cont(:,3)];
@@ -65,6 +73,28 @@ logs.Vw_d = Vw_d;
 % countinuous wind log (zero order hold)
 Vw = interp1(tk(1:end-1), Vw_d, t_all, 'previous', 'extrap');
 logs.Vw = Vw;
+
+% continuous reference dynamic inversion outputs
+ref_phib = zeros(N,1);
+ref_ng = zeros(N,1);
+ref_Th = zeros(N,1);
+for i = 1:N
+    rdx = ref_vel_cont(i,1);
+    rdy = ref_vel_cont(i,2);
+    rdh = ref_vel_cont(i,3);
+    rd2x = ref_acc_cont(i,1);
+    rd2y = ref_acc_cont(i,2);
+    rd2h = ref_acc_cont(i,3);
+
+    rVg = sqrt(rdx^2 + rdy^2 + rdh^2);
+    rGamma = asin(rdh / rVg);
+    rPsi = atan2(rdy, rdx);
+    [ref_phib(i), ref_ng(i), ref_Th(i), ~] = ...
+        di_mapping(rd2x, rd2y, rd2h, rPsi, rGamma, rVg, Vw(i), params);
+end
+logs.ref_phib_cont = ref_phib;
+logs.ref_ng_cont = ref_ng;
+logs.ref_Th_cont = ref_Th;
 
 % countinuous Th, ng and phb mapping
 Th = zeros(N,1);

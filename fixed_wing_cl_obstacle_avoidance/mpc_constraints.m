@@ -39,14 +39,18 @@ C_Vg = [Vg(:) - con.Vg_max; con.Vg_min - Vg(:)];
 C_gamma = [gamma(:) - con.gamma_max; con.gamma_min - gamma(:)];
 
 % da constraints
-da_min = da_con(1); da_max = da_con(2);
+da_min = repmat(da_con(:,1), 1, Hc);
+da_max = repmat(da_con(:,2), 1, Hc);
 dU = zeros(nu, Hc);
 dU(:,1) = U(:,1) - u_prev;
 dU(:,2:end) = U(:,2:end) - U(:,1:end-1);
-C_da = [dU(:) - da_max; da_min - dU(:)];
+C_da = [dU(:) - da_max(:); da_min(:) - dU(:)];
 
-% contractive constraint with barrier function
-C_V = mpc_contractive_constraint(cs0, ref, CS, alpha, obstacles, obst_params);
+% contractive constraints with obstacle potential terms
+[C_VBF, ~, ~, C_VAPF, ~] = ...
+    mpc_contractive_constraint(cs0, ref, CS, alpha, obstacles, obst_params);
+C_V = C_VBF;   % active contractive test: VBF
+% C_V = C_VAPF;  % active contractive test: VAPF
 
 % obstacle avoidance constraints
 C_obst = [];
@@ -67,6 +71,7 @@ end
 C = [C_Th; C_ng; C_phib; C_Vg; C_gamma; C_da; C_obst; C_V];
 Ceq = [];
 
+% constraints vector for diagnostics
 C_groups.Th = max(C_Th);
 C_groups.ng = max(C_ng);
 C_groups.phib = max(C_phib);
@@ -79,5 +84,7 @@ else
     C_groups.obst = max(C_obst);
 end
 C_groups.contractive = C_V;
+C_groups.VBF = C_VBF;
+C_groups.VAPF = C_VAPF;
 
 end

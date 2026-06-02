@@ -75,21 +75,25 @@ B = [0 0 0;
 % prediction & control horizon
 Hp = 20; Hc = Hp; % trajectory tracking problem
 
-% Cost weights for cost function
+% Cost weights for cost function (tunned withoute obstacle avoidance)
 % Q  = diag([1 1 1 4 4 4]);  % 6x6 weight for tracking_cost
 % R  = diag([4.2 4.2 22]);   % 3x3 weight for control_cost
 % Rd = diag([3 3 1.2]);      % 3x3 weight for dU_cost 
 
-Q  = diag([1 1 1 4 4 4]);  % 6x6 weight for tracking_cost
-R  = diag([4 4 4]);   % 3x3 weight for control_cost
-Rd = diag([2 2 2]);      % 3x3 weight for dU_cost  
+Q  = 0.1*diag([1 1 1 10 10 10]);  % 6x6 weight for tracking_cost
+R  = 10*diag([1 2 1.5]);      % 3x3 weight for control_cost
+Rd = diag([1 2 1.5]);     % 3x3 weight for dU_cost  
 
 % constraints & bounds for the optimization problem (fmincon)
-lb = repmat([-6; -6; -6], Hc, 1);  % lower bounds
-ub = repmat([6; 6; 6], Hc, 1);     % upper bounds
+lb = repmat([-5; -5; -5], Hc, 1); % lower bounds
+ub = repmat([5; 5; 5], Hc, 1);    % upper bounds
+a_con = [lb(1:3) ub(1:3)];
 
-% da constraints
-da_min = -1; da_max = 1; da_con = [da_min; da_max];
+% da constraints: rows [dax; day; dah], columns [min max]
+dax_min = -1; dax_max = 1;
+day_min = -1; day_max = 1;
+dah_min = -1; dah_max = 1;
+da_con = [dax_min dax_max; day_min day_max; dah_min dah_max];
 
 % contractive mpc
 alpha = 1;
@@ -102,10 +106,12 @@ eucl_dist_prev = 0;         % euclidian distance evaluation for printf
 U0 = zeros(3*Hc,1);         % mpc first control signal guess
 u_prev = zeros(3,1);        % mpc cost function dU 
 J = zeros(N,1);             % mpc cost function value log
+J_tr = zeros(N,1);          % mpc tracking cost log
+J_con = zeros(N,1);         % mpc control cost log
+J_du = zeros(N,1);          % mpc dU cost log
+J_apf = zeros(N,1);         % mpc APF cost log
 exitflag = zeros(N,1);      % mpc exitflag log
-C_V = zeros(N,1);           % mpc contractive constraint check
-C_tracking = zeros(N,1);    % mpc tracking contractive constraint check
-C_barrier = zeros(N,1);     % mpc barrier contractive constraint check
+C_VBF = zeros(N,1);         % mpc VBF contractive constraint check
 C_Th_check = zeros(N,1);    % thrust constraint check
 C_ng_check = zeros(N,1);    % g-load constraint check
 C_phib_check = zeros(N,1);  % bank angle constraint check
@@ -155,9 +161,15 @@ for k = 1:N
     mpc_controller(params, cs0, ref_mpc, A, B, Q, R, Rd, Hp, Hc, lb, ub, ...
     da_con, alpha, U0, Vw_d(k), u_prev, a_ref_prev, obstacles, obst_params);
 
+    [~, cost_terms] = mpc_cost_func(U_opt, u_prev, cs0, A, B, Q, R, Rd, ...
+        Hp, Hc, ref_mpc, a_ref_prev, obstacles, obst_params);
+    J_tr(k) = cost_terms.tr_cost;
+    J_con(k) = cost_terms.con_cost;
+    J_du(k) = cost_terms.du_cost;
+    J_apf(k) = cost_terms.apf_cost;
+
     CS = mpc_state_prediction(U_opt, cs0, A, B, Hp, Hc);
-    [C_V(k), C_tracking(k), C_barrier(k)] = ...
-        mpc_contractive_constraint(cs0, ref_mpc, CS, alpha, obstacles, obst_params);
+    C_VBF(k) = mpc_contractive_constraint(cs0, ref_mpc, CS, alpha, obstacles, obst_params);
     [~, ~, C_groups] = mpc_constraints(U_opt, u_prev, cs0, ref_mpc, A, B, Hp, Hc, ...
         da_con, alpha, Vw_d(k), params, obstacles, obst_params);
     C_Th_check(k) = C_groups.Th;
@@ -176,8 +188,11 @@ for k = 1:N
     eucl_dist = norm(cs0(1:3)-r_k(1:3));
     eucl_dist_change = eucl_dist - eucl_dist_prev;
     eucl_dist_prev = eucl_dist;
-    fprintf('k = %4d/%4d | MPC | J = %14.6f | exit = %2d | ed = %12.6f | ed_change = %14.6f | nearest obst = %d | obst_dist = %10.3f\n', ...
-        k, N, J(k), exitflag(k), eucl_dist, eucl_dist_change, nearest_obst_idx, nearest_obst_dist);
+    fprintf(['k = %4d/%4d | MPC | J = %8.1f | J_Q = %8.1f | J_R = %8.1f | ', ...
+        'J_Rd = %8.1f | J_APF = %8.1f | exit = %2d | ed = %6.1f | ', ...
+        'ded = %6.1f | obst = %d | obst_d = %6.1f\n'], ...
+        k, N, J(k), J_tr(k), J_con(k), J_du(k), J_apf(k), exitflag(k), ...
+        eucl_dist, eucl_dist_change, nearest_obst_idx, nearest_obst_dist);
    
     % apply accelarations & control storage
     u_k = [ax ay ah];
@@ -223,9 +238,7 @@ fprintf('Vg      = %12.6f\n', max(C_Vg_check));
 fprintf('gamma   = %12.6f\n', max(C_gamma_check));
 fprintf('da      = %12.6f\n', max(C_da_check));
 fprintf('obst    = %12.6f\n', max(C_obst_check));
-fprintf('VBF     = %12.6f\n', max(C_V));
-fprintf('tracking= %12.6f\n', max(C_tracking));
-fprintf('barrier = %12.6f\n', max(C_barrier));
+fprintf('VBF     = %12.6f\n', max(C_VBF));
 
 constraint_tol = 1e-6;
 fprintf('\nMPC constraint violation intervals (C > %.1e):\n', constraint_tol);
@@ -236,9 +249,7 @@ print_constraint_diagnostics('Vg', C_Vg_check, tk(1:end-1), constraint_tol);
 print_constraint_diagnostics('gamma', C_gamma_check, tk(1:end-1), constraint_tol);
 print_constraint_diagnostics('da', C_da_check, tk(1:end-1), constraint_tol);
 print_constraint_diagnostics('obst', C_obst_check, tk(1:end-1), constraint_tol);
-print_constraint_diagnostics('VBF', C_V, tk(1:end-1), constraint_tol);
-print_constraint_diagnostics('tracking', C_tracking, tk(1:end-1), constraint_tol);
-print_constraint_diagnostics('barrier', C_barrier, tk(1:end-1), constraint_tol);
+print_constraint_diagnostics('VBF', C_VBF, tk(1:end-1), constraint_tol);
 
 %% obstacle avoidance evaluation
 
@@ -260,9 +271,14 @@ obst_clearance = min_obst_dist - collision_bound;
 % obstacle avoidance summary
 fprintf('\nObstacle avoidance summary:\n');
 for i = 1:numel(obstacles)
+    if isfield(obstacles, 'id')
+        obstacle_id = obstacles(i).id;
+    else
+        obstacle_id = i;
+    end
     fprintf('Obstacle %d | t_obst = %8.3f s | t_min = %8.3f s | min distance = %10.3f m | clearance = %10.3f m\n', ...
-        i, obstacles(i).t, min_obst_time(i), min_obst_dist(i), obst_clearance(i));
+        obstacle_id, obstacles(i).t, min_obst_time(i), min_obst_dist(i), obst_clearance(i));
 end
 
 %% plots
-plots_func(t_total, logs, metrics, J, exitflag, obstacles, obst_params);
+plots_func(t_total, logs, metrics, J, exitflag, obstacles, obst_params, a_con, da_con);

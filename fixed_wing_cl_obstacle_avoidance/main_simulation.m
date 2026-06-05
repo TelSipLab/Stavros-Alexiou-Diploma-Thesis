@@ -20,8 +20,8 @@ dh0 = Vg0*sin(gamma0);
 cs0 = [x0; y0; h0; dx0; dy0; dh0];
 
 % simulation parameteres
-T = 220;     % simulation time
-Ts = 0.1;  % sampling time
+T = 270;     % simulation time
+Ts = 0.1;    % sampling time
 N = T/Ts;    % total samples
 tk = 0:Ts:T; % discrete time log
 
@@ -73,16 +73,11 @@ B = [0 0 0;
      0 0 Ts];
 
 % prediction & control horizon
-Hp = 20; Hc = Hp; % trajectory tracking problem
-
-% Cost weights for cost function (tunned withoute obstacle avoidance)
-% Q  = diag([1 1 1 4 4 4]);  % 6x6 weight for tracking_cost
-% R  = diag([4.2 4.2 22]);   % 3x3 weight for control_cost
-% Rd = diag([3 3 1.2]);      % 3x3 weight for dU_cost 
+Hp = 20; Hc = Hp; % trajectory tracking problem 
 
 Q  = 0.1*diag([1 1 1 10 10 10]);  % 6x6 weight for tracking_cost
-R  = 10*diag([1 2 1.5]);      % 3x3 weight for control_cost
-Rd = diag([1 2 1.5]);     % 3x3 weight for dU_cost  
+R  = 10*diag([1 2 1.5]);          % 3x3 weight for control_cost
+Rd = diag([1 2 1.5]);             % 3x3 weight for dU_cost  
 
 % constraints & bounds for the optimization problem (fmincon)
 lb = repmat([-5; -5; -5], Hc, 1); % lower bounds
@@ -96,7 +91,7 @@ dah_min = -1; dah_max = 1;
 da_con = [dax_min dax_max; day_min day_max; dah_min dah_max];
 
 % contractive mpc
-alpha = 1;
+alpha = 0.95;
 
 %% prealloc vectors before the main simulation loop
 rng(1);                     % seed for randn in wind_disturbances
@@ -153,25 +148,30 @@ for k = 1:N
 
     % % MPC
     t = (k-1)*Ts;
+    if t <= obst_params.obstacles_active_until
+        active_obstacles = obstacles;
+    else
+        active_obstacles = obstacles([]);
+    end
     ref_prev = ref_state_hippodrome(t);
     a_ref_prev = ref_prev(7:9);
     ref_mpc = mpc_ref_window(t, Hp, Ts, @ref_state_hippodrome);
 
     [ax, ay, ah, U0, U_opt, J(k), exitflag(k), output] = ...
     mpc_controller(params, cs0, ref_mpc, A, B, Q, R, Rd, Hp, Hc, lb, ub, ...
-    da_con, alpha, U0, Vw_d(k), u_prev, a_ref_prev, obstacles, obst_params);
+    da_con, alpha, U0, Vw_d(k), u_prev, a_ref_prev, active_obstacles, obst_params);
 
     [~, cost_terms] = mpc_cost_func(U_opt, u_prev, cs0, A, B, Q, R, Rd, ...
-        Hp, Hc, ref_mpc, a_ref_prev, obstacles, obst_params);
+        Hp, Hc, ref_mpc, a_ref_prev, active_obstacles, obst_params);
     J_tr(k) = cost_terms.tr_cost;
     J_con(k) = cost_terms.con_cost;
     J_du(k) = cost_terms.du_cost;
     J_apf(k) = cost_terms.apf_cost;
 
     CS = mpc_state_prediction(U_opt, cs0, A, B, Hp, Hc);
-    C_VBF(k) = mpc_contractive_constraint(cs0, ref_mpc, CS, alpha, obstacles, obst_params);
+    C_VBF(k) = mpc_contractive_constraint(cs0, ref_mpc, CS, alpha, active_obstacles, obst_params);
     [~, ~, C_groups] = mpc_constraints(U_opt, u_prev, cs0, ref_mpc, A, B, Hp, Hc, ...
-        da_con, alpha, Vw_d(k), params, obstacles, obst_params);
+        da_con, alpha, Vw_d(k), params, active_obstacles, obst_params);
     C_Th_check(k) = C_groups.Th;
     C_ng_check(k) = C_groups.ng;
     C_phib_check(k) = C_groups.phib;
@@ -180,10 +180,21 @@ for k = 1:N
     C_da_check(k) = C_groups.da;
     C_obst_check(k) = C_groups.obst;
 
-    for i = 1:numel(obstacles)
-        obst_dist_d(k,i) = norm(cs0(1:3) - obstacles(i).pos);
+    if isempty(active_obstacles)
+        nearest_obst_dist = Inf;
+        nearest_obst_idx = 0;
+    else
+        active_obst_dist = zeros(1, numel(active_obstacles));
+        for i = 1:numel(active_obstacles)
+            active_obst_dist(i) = norm(cs0(1:3) - active_obstacles(i).pos);
+        end
+        [nearest_obst_dist, nearest_active_idx] = min(active_obst_dist);
+        if isfield(active_obstacles, 'id')
+            nearest_obst_idx = active_obstacles(nearest_active_idx).id;
+        else
+            nearest_obst_idx = nearest_active_idx;
+        end
     end
-    [nearest_obst_dist, nearest_obst_idx] = min(obst_dist_d(k,:));
 
     eucl_dist = norm(cs0(1:3)-r_k(1:3));
     eucl_dist_change = eucl_dist - eucl_dist_prev;
@@ -225,7 +236,7 @@ end
 %% log and metrics
 
 % UAV data log
-logs = uav_datalog(t_total, S_total, tk, U_d, Vw_d, @ref_state_hippodrome, params);
+logs = uav_datalog(t_total, S_total, tk, U_d, Vw_d, @ref_state_hippodrome, params, obstacles, obst_params);
 
 % performance metrics
 metrics = performance_metrics(t_total, Ts, logs)
@@ -254,16 +265,17 @@ print_constraint_diagnostics('VBF', C_VBF, tk(1:end-1), constraint_tol);
 %% obstacle avoidance evaluation
 
 % obstacle distance calculation
-obst_dist = zeros(length(t_total), numel(obstacles));
+obst_dist = nan(length(t_total), numel(obstacles));
+obstacle_active_mask = t_total <= obst_params.obstacles_active_until;
 for i = 1:numel(obstacles)
-    delta_x_obst = logs.x - obstacles(i).pos(1);
-    delta_y_obst = logs.y - obstacles(i).pos(2);
-    delta_h_obst = logs.h - obstacles(i).pos(3);
-    obst_dist(:,i) = sqrt(delta_x_obst.^2 + delta_y_obst.^2 + delta_h_obst.^2);
+    delta_x_obst = logs.x(obstacle_active_mask) - obstacles(i).pos(1);
+    delta_y_obst = logs.y(obstacle_active_mask) - obstacles(i).pos(2);
+    delta_h_obst = logs.h(obstacle_active_mask) - obstacles(i).pos(3);
+    obst_dist(obstacle_active_mask,i) = sqrt(delta_x_obst.^2 + delta_y_obst.^2 + delta_h_obst.^2);
 end
 
 % minimum distance and collision clearance calculation
-[min_obst_dist, min_obst_idx] = min(obst_dist, [], 1);
+[min_obst_dist, min_obst_idx] = min(obst_dist, [], 1, 'omitnan');
 min_obst_time = t_total(min_obst_idx);
 collision_bound = obst_params.r_uav + obst_params.r_obst;
 obst_clearance = min_obst_dist - collision_bound;

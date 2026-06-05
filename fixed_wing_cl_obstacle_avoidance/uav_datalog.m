@@ -1,4 +1,4 @@
-function logs = uav_datalog(t_all, S_all, tk, U_d, Vw_d, ref_fun, params)
+function logs = uav_datalog(t_all, S_all, tk, U_d, Vw_d, ref_fun, params, obstacles, obst_params)
 
 N = length(t_all);
 K = length(tk);
@@ -58,7 +58,23 @@ logs.Edot = e2;
 Vx = 0.5*(e1(:,1).^2 + e2(:,1).^2); logs.Vx = Vx;
 Vy = 0.5*(e1(:,2).^2 + e2(:,2).^2); logs.Vy = Vy;
 Vh = 0.5*(e1(:,3).^2 + e2(:,3).^2); logs.Vh = Vh;
-Vtot = Vx + Vy + Vh; logs.Vtot = Vtot;
+Ve = Vx + Vy + Vh;
+logs.Ve = Ve;
+BF = zeros(N,1);
+if nargin >= 9
+    obstacles_active_until = obst_params.obstacles_active_until;
+    for i = 1:N
+        if t_all(i) > obstacles_active_until
+            continue;
+        end
+        for m = 1:numel(obstacles)
+            dim = norm([x(i); y(i); h(i)] - obstacles(m).pos);
+            BF(i) = BF(i) + obst_params.Ko_BF * obstacle_barrier_potential(dim, obst_params);
+        end
+    end
+end
+logs.Vb = BF;
+logs.Vtotal = Ve + BF;
 
 % discrete controller outputs log
 logs.U_d = U_d;
@@ -132,5 +148,18 @@ logs.phib_d = phb_d;
 logs.Th_d_zoh = interp1(tk(1:end-1), Th_d, t_all, 'previous', 'extrap');
 logs.ng_d_zoh = interp1(tk(1:end-1), ng_d, t_all, 'previous', 'extrap');
 logs.phib_d_zoh = interp1(tk(1:end-1), phb_d, t_all, 'previous', 'extrap');
+
+end
+
+function Uo = obstacle_barrier_potential(dim, obst_params)
+
+dc = obst_params.r_min;
+rho0 = obst_params.d0_bar - dc;
+
+if dim > dc && dim <= obst_params.d0_bar
+    Uo = log(rho0^4 / (rho0^4 - (dim - obst_params.d0_bar)^4));
+else
+    Uo = 0;
+end
 
 end

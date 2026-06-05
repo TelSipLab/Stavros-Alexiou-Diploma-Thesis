@@ -8,11 +8,12 @@ obst_params.r_min = obst_params.r_uav + obst_params.r_obst ...
     + obst_params.safety_margin;  % minimum avoidance distance
 
 % barrier functions parameters
-obst_params.ddet = 200;    % detection distance
-obst_params.d0_bar = 200;  % obstacle influence distance
-obst_params.Qo_BF = 30;    % barrier function weight
-obst_params.Qo_APF = 0.05;  % artificial potential field weight
-obst_params.Ko_BF = 1;  % contractive barrier function weight
+obst_params.ddet = 200;    % detection distance [m]
+obst_params.d0_bar = 200;  % obstacle influence distance [m]
+obst_params.Qo_BF = 30;    % barrier function weight (not used)
+obst_params.Qo_APF = 0.05; % artificial potential field weight
+obst_params.Ko_BF = 1;     % contractive barrier function weight
+obst_params.obstacles_active_until = 220; % obstacle avoidance active time [s]
 
 % obstacle locations defined by time instants on the reference trajectory
 [~, traj_params] = ref_fun(0);

@@ -21,7 +21,9 @@ rPsi = atan2(rdy, rdx);
 xddot = logs.U(:,1); yddot = logs.U(:,2); hddot = logs.U(:,3);
 
 % lyapunov function values
-Vx = logs.Vx; Vy = logs.Vy; Vh = logs.Vh; Vtot = logs.Vtot;
+Ve = logs.Ve;
+Vb = logs.Vb;
+Vtotal = logs.Vtotal;
 
 %% UAV Constraints
 C = uav_constraints();
@@ -195,32 +197,34 @@ title('Objective value J over time'); xlabel('k'); ylabel('J');
 figure; stairs(exitflag); grid on;
 title('exitflag value over time'); xlabel('k'); ylabel('exitflag');
 
-%% fig10: Lyapunov functions
+%% fig10: Lyapunov function terms
 figure;
 
-subplot(4,1,1);
-plot(t, Vx, 'LineWidth', 1.4); grid on;
-ylabel('V_x'); title('Lyapunov function for x-axis');
+subplot(3,1,1);
+plot(t, Ve, 'LineWidth', 1.4); grid on;
+ylabel('V_e');
+title('Tracking Lyapunov Term');
 
-subplot(4,1,2);
-plot(t, Vy, 'LineWidth', 1.4); grid on;
-ylabel('V_y'); title('Lyapunov function for y-axis');
+subplot(3,1,2);
+plot(t, Vb, 'LineWidth', 1.4); grid on;
+ylabel('V_b');
+title('Barrier Lyapunov Term');
 
-subplot(4,1,3);
-plot(t, Vh, 'LineWidth', 1.4); grid on;
-ylabel('V_h'); title('Lyapunov function for h-axis');
-
-subplot(4,1,4);
-plot(t, Vtot, 'LineWidth', 1.4); grid on;
-ylabel('V_{tot}'); xlabel('Time [s]');
-title('Total Lyapunov function');
+subplot(3,1,3);
+plot(t, Vtotal, 'LineWidth', 1.4); grid on;
+ylabel('V_{total}');
+xlabel('Time [s]');
+title('Total Lyapunov Function');
 
 %% fig11: Obstacle collision clearance
-obst_dist = zeros(numel(t), numel(obstacles));
+obst_plot_mask = t <= obst_params.obstacles_active_until;
+t_obst_plot = t(obst_plot_mask);
+
+obst_dist = zeros(numel(t_obst_plot), numel(obstacles));
 for i = 1:numel(obstacles)
-    dx_obst = x - obstacles(i).pos(1);
-    dy_obst = y - obstacles(i).pos(2);
-    dh_obst = h - obstacles(i).pos(3);
+    dx_obst = x(obst_plot_mask) - obstacles(i).pos(1);
+    dy_obst = y(obst_plot_mask) - obstacles(i).pos(2);
+    dh_obst = h(obst_plot_mask) - obstacles(i).pos(3);
     obst_dist(:,i) = sqrt(dx_obst.^2 + dy_obst.^2 + dh_obst.^2);
 end
 
@@ -232,10 +236,10 @@ figure;
 clearance_layout = tiledlayout(3, 2, 'TileSpacing', 'compact', 'Padding', 'compact');
 
 main_axis = nexttile(clearance_layout, [1 2]);
-plot(main_axis, t, obst_clearance, 'b-', 'LineWidth', 1.6); hold(main_axis, 'on');
+plot(main_axis, t_obst_plot, obst_clearance, 'b-', 'LineWidth', 1.6); hold(main_axis, 'on');
 yline(main_axis, 0, 'r--', 'LineWidth', 1.4);
 grid(main_axis, 'on');
-xlim(main_axis, [t(1), t(end)]);
+xlim(main_axis, [t_obst_plot(1), t_obst_plot(end)]);
 ylim(main_axis, [min(-0.5, min(obst_clearance) - 0.2), max(obst_clearance) + 5]);
 xlabel(main_axis, 'Time [sec]');
 ylabel(main_axis, 'Distance [m]');
@@ -250,15 +254,15 @@ for i = 1:num_zoom_obstacles
     near_collision_zoom = ~isempty(zoom_idx);
     if isempty(zoom_idx)
         [~, min_clearance_idx] = min(obstacle_clearance);
-        zoom_idx = max(1, min_clearance_idx-20):min(numel(t), min_clearance_idx+20);
+        zoom_idx = max(1, min_clearance_idx-20):min(numel(t_obst_plot), min_clearance_idx+20);
     end
 
-    zoom_time_min = max(t(1), t(zoom_idx(1)) - 0.5);
-    zoom_time_max = min(t(end), t(zoom_idx(end)) + 0.5);
-    zoom_mask = (t >= zoom_time_min) & (t <= zoom_time_max);
+    zoom_time_min = max(t_obst_plot(1), t_obst_plot(zoom_idx(1)) - 0.5);
+    zoom_time_max = min(t_obst_plot(end), t_obst_plot(zoom_idx(end)) + 0.5);
+    zoom_mask = (t_obst_plot >= zoom_time_min) & (t_obst_plot <= zoom_time_max);
 
     zoom_axis = nexttile(clearance_layout);
-    plot(zoom_axis, t, obstacle_clearance, 'b-', 'LineWidth', 1.4); hold(zoom_axis, 'on');
+    plot(zoom_axis, t_obst_plot, obstacle_clearance, 'b-', 'LineWidth', 1.4); hold(zoom_axis, 'on');
     yline(zoom_axis, 0, 'r--', 'LineWidth', 1.2);
     grid(zoom_axis, 'on');
     xlim(zoom_axis, [zoom_time_min, zoom_time_max]);

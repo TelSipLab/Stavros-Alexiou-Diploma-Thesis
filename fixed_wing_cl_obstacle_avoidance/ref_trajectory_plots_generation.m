@@ -34,7 +34,7 @@ limit_color = [1.00 0.20 0.20];
 grid_color = [0.85 0.85 0.85];
 
 output_directory = fullfile(fileparts(mfilename('fullpath')), ...
-    'reference_trajectory_figures_paper');
+    'reference_trajectory_figures_thesis');
 if export_figures && ~exist(output_directory, 'dir')
     mkdir(output_directory);
 end
@@ -322,7 +322,7 @@ set(input_legend, 'Units', 'normalized', 'Position', bottom_legend_position);
 export_figure(input_figure, output_directory, 'fig7_required_uav_inputs', export_figures);
 
 if export_figures
-    fprintf('Reference trajectory paper figures were saved as SVG files in:\n%s\n', output_directory);
+    fprintf('Reference trajectory thesis figures were saved as SVG files in:\n%s\n', output_directory);
 else
     fprintf('Reference trajectory figures were generated without SVG export.\n');
 end

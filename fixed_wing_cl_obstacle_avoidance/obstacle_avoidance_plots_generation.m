@@ -3,7 +3,7 @@ clc; clear; close all;
 %% Saved obstacle-avoidance run
 workspace_file = fullfile(fileparts(mfilename('fullpath')), ...
     'run_alpha095_T270_settling.mat');
-export_figures = false;
+export_figures = true;
 
 run_data = load(workspace_file);
 t = run_data.t_total;
@@ -89,9 +89,14 @@ ref_phib_deg = rad2deg(logs.ref_phib_cont);
 time_plot_end = t(end);
 
 %% Figure 1: obstacle-avoidance trajectory views
+show_straight_zoom_subplots = false;
 trajectory_figure = figure('Color', 'w');
 set(trajectory_figure, 'Units', 'centimeters');
-trajectory_figure.Position(3:4) = [14 18];
+if show_straight_zoom_subplots
+    trajectory_figure.Position(3:4) = [16 27];
+else
+    trajectory_figure.Position(3:4) = [16 22];
+end
 movegui(trajectory_figure, 'center');
 set(trajectory_figure, 'PaperPositionMode', 'auto');
 
@@ -105,16 +110,60 @@ start_handle = plot(trajectory_xy_axis, x(1), y(1), 'o', 'Color', start_color, .
     'MarkerFaceColor', start_color, 'MarkerSize', 6);
 end_handle = plot(trajectory_xy_axis, x(end), y(end), 'o', 'Color', end_color, ...
     'MarkerFaceColor', end_color, 'MarkerSize', 6);
+plot_obstacle_centers_2d(trajectory_xy_axis, obstacles);
 axis(trajectory_xy_axis, 'tight');
 axis(trajectory_xy_axis, 'equal');
 pad_xy_axis(trajectory_xy_axis, 0.08);
 xlabel(trajectory_xy_axis, 'x [m]');
 ylabel(trajectory_xy_axis, 'y [m]');
 style_axis(trajectory_xy_axis, figure_font_name, axis_font_size, axes_line_width, grid_color);
-set(trajectory_xy_axis, 'Position', [0.13 0.72 0.80 0.17]);
-add_subplot_label_at(trajectory_xy_axis, '(a)', figure_font_name, axis_font_size, 0.52, -0.52);
+if show_straight_zoom_subplots
+    set(trajectory_xy_axis, 'Position', [0.13 0.84 0.80 0.11]);
+    add_subplot_label_at(trajectory_xy_axis, '(a)', figure_font_name, axis_font_size, 0.52, -0.55);
+else
+    set(trajectory_xy_axis, 'Position', [0.13 0.80 0.80 0.13]);
+    add_subplot_label_at(trajectory_xy_axis, '(a)', figure_font_name, axis_font_size, 0.52, -0.40);
+end
 
-trajectory_3d_axis = subplot(2,1,2, 'Parent', trajectory_figure);
+x_ref_range = max(rx) - min(rx);
+left_turn_mask = rx <= min(rx) + 0.18*x_ref_range;
+right_turn_mask = rx >= max(rx) - 0.18*x_ref_range;
+
+if show_straight_zoom_subplots
+    left_turn_position = [0.13 0.64 0.34 0.11];
+    right_turn_position = [0.59 0.64 0.34 0.11];
+else
+    left_turn_position = [0.13 0.58 0.34 0.14];
+    right_turn_position = [0.59 0.58 0.34 0.14];
+end
+
+left_turn_axis = axes('Parent', trajectory_figure, 'Position', left_turn_position);
+plot_turn_zoom(left_turn_axis, x, y, rx, ry, left_turn_mask, ...
+    actual_color, reference_color, actual_line_width, reference_line_width, ...
+    figure_font_name, axis_font_size, axes_line_width, grid_color, 'Left turn', [0 400], obstacles, 4);
+add_subplot_label(left_turn_axis, '(b)', figure_font_name, axis_font_size);
+
+right_turn_axis = axes('Parent', trajectory_figure, 'Position', right_turn_position);
+plot_turn_zoom(right_turn_axis, x, y, rx, ry, right_turn_mask, ...
+    actual_color, reference_color, actual_line_width, reference_line_width, ...
+    figure_font_name, axis_font_size, axes_line_width, grid_color, 'Right turn', [200 600], obstacles, 2);
+add_subplot_label(right_turn_axis, '(c)', figure_font_name, axis_font_size);
+
+if show_straight_zoom_subplots
+    straight_1_axis = axes('Parent', trajectory_figure, 'Position', [0.13 0.40 0.34 0.11]);
+    plot_straight_avoidance_zoom(straight_1_axis, t, x, h, rx, rh, obstacles, 1, ...
+        actual_color, reference_color, actual_line_width, reference_line_width, ...
+        figure_font_name, axis_font_size, axes_line_width, grid_color, 'Lower straight segment');
+    add_subplot_label(straight_1_axis, '(d)', figure_font_name, axis_font_size);
+
+    straight_3_axis = axes('Parent', trajectory_figure, 'Position', [0.59 0.40 0.34 0.11]);
+    plot_straight_avoidance_zoom(straight_3_axis, t, x, h, rx, rh, obstacles, 3, ...
+        actual_color, reference_color, actual_line_width, reference_line_width, ...
+        figure_font_name, axis_font_size, axes_line_width, grid_color, 'Upper straight segment');
+    add_subplot_label(straight_3_axis, '(e)', figure_font_name, axis_font_size);
+end
+
+trajectory_3d_axis = axes('Parent', trajectory_figure);
 plot3(trajectory_3d_axis, x, y, h, '-', 'Color', actual_color, ...
     'LineWidth', actual_line_width);
 hold(trajectory_3d_axis, 'on');
@@ -124,6 +173,9 @@ plot3(trajectory_3d_axis, x(1), y(1), h(1), 'o', 'Color', start_color, ...
     'MarkerFaceColor', start_color, 'MarkerSize', 6);
 plot3(trajectory_3d_axis, x(end), y(end), h(end), 'o', 'Color', end_color, ...
     'MarkerFaceColor', end_color, 'MarkerSize', 6);
+plot_obstacle_centers_3d(trajectory_3d_axis, obstacles);
+obstacle_handle = plot3(trajectory_3d_axis, nan, nan, nan, 'ko', ...
+    'MarkerFaceColor', 'k', 'MarkerSize', 5, 'LineWidth', 1.0);
 axis(trajectory_3d_axis, 'tight');
 view(trajectory_3d_axis, 38, 24);
 pbaspect(trajectory_3d_axis, [1 1 0.65]);
@@ -134,13 +186,20 @@ xlabel(trajectory_3d_axis, 'x [m]');
 ylabel(trajectory_3d_axis, 'y [m]');
 zlabel(trajectory_3d_axis, 'h [m]');
 style_axis(trajectory_3d_axis, figure_font_name, axis_font_size, axes_line_width, grid_color);
-set(trajectory_3d_axis, 'Position', [0.08 0.18 0.86 0.46]);
-add_subplot_label(trajectory_3d_axis, '(b)', figure_font_name, axis_font_size);
+if show_straight_zoom_subplots
+    set(trajectory_3d_axis, 'Position', [0.08 0.15 0.86 0.18]);
+    add_subplot_label_at(trajectory_3d_axis, '(f)', figure_font_name, axis_font_size, 0.52, -0.10);
+else
+    set(trajectory_3d_axis, 'Position', [0.08 0.18 0.86 0.30]);
+    add_subplot_label_at(trajectory_3d_axis, '(d)', figure_font_name, axis_font_size, 0.52, -0.12);
+end
 
-add_bottom_legend(trajectory_3d_axis, ...
-    [actual_xy_handle reference_xy_handle start_handle end_handle], ...
-    {'UAV trajectory', 'Reference trajectory', 'Initial UAV position', 'Final UAV position'}, ...
-    figure_font_name, legend_font_size, [0.12 0.045 0.76 0.06]);
+trajectory_legend = add_bottom_legend(trajectory_3d_axis, ...
+    [actual_xy_handle reference_xy_handle start_handle end_handle obstacle_handle], ...
+    {'UAV trajectory', 'Reference trajectory', 'Initial UAV position', ...
+    'Final UAV position', 'Obstacle positions'}, ...
+    figure_font_name, legend_font_size, [0.13 0.025 0.74 0.09]);
+set(trajectory_legend, 'NumColumns', 3);
 export_figure(trajectory_figure, output_directory, 'fig1_obstacle_trajectory_views', export_figures);
 
 %% Figure 2: position tracking
@@ -240,22 +299,26 @@ export_figure(input_figure, output_directory, 'fig7_obstacle_required_inputs', e
 
 %% Figure 8: Euclidean distance
 ed_figure = make_time_figure([12 7]);
-ed_axis = axes('Parent', ed_figure, 'Position', [0.13 0.23 0.80 0.62]);
+ed_axis = axes('Parent', ed_figure, 'Position', [0.13 0.28 0.80 0.57]);
 plot(ed_axis, t, metrics.ED, '-', 'Color', actual_color, 'LineWidth', actual_line_width);
 xlabel(ed_axis, 'Time [s]');
 ylabel(ed_axis, 'Euclidean Distance [m]');
 setup_time_axis(ed_axis, time_plot_end, figure_font_name, axis_font_size, ...
     axes_line_width, grid_color);
+ed_xlabel = get(ed_axis, 'XLabel');
+ed_xlabel.Position(2) = -0.30;
 set_nonnegative_y_limits(ed_axis);
 export_figure(ed_figure, output_directory, 'fig8_obstacle_euclidean_distance', export_figures);
 
 %% Figure 9: objective function value
 solver_figure = make_time_figure([12 7]);
-cost_axis = axes('Parent', solver_figure, 'Position', [0.13 0.23 0.80 0.62]);
+cost_axis = axes('Parent', solver_figure, 'Position', [0.13 0.28 0.80 0.57]);
 plot(cost_axis, 1:numel(J), J, '-', 'Color', actual_color, 'LineWidth', actual_line_width);
 xlabel(cost_axis, 'k');
 ylabel(cost_axis, 'J');
 setup_sample_axis(cost_axis, numel(J), figure_font_name, axis_font_size, axes_line_width, grid_color);
+cost_xlabel = get(cost_axis, 'XLabel');
+cost_xlabel.Position(2) = -0.30;
 set_nonnegative_y_limits(cost_axis);
 export_figure(solver_figure, output_directory, 'fig9_obstacle_objective_value', export_figures);
 
@@ -380,6 +443,87 @@ actual_handle = plot(ax, time_vector, signal, '-', 'Color', actual_color, ...
 hold(ax, 'on');
 reference_handle = plot(ax, time_vector, reference, '--', 'Color', reference_color, ...
     'LineWidth', reference_line_width);
+end
+
+function plot_turn_zoom(ax, x, y, rx, ry, turn_mask, actual_color, reference_color, ...
+    actual_line_width, reference_line_width, figure_font_name, axis_font_size, ...
+    axes_line_width, grid_color, title_text, y_limits, obstacles, obstacle_id)
+plot(ax, x, y, '-', 'Color', actual_color, 'LineWidth', actual_line_width);
+hold(ax, 'on');
+plot(ax, rx, ry, '--', 'Color', reference_color, 'LineWidth', reference_line_width);
+plot_obstacle_marker_xy(ax, obstacles, obstacle_id);
+axis(ax, 'equal');
+if any(turn_mask)
+    x_margin = 0.12 * (max(rx(turn_mask)) - min(rx(turn_mask)));
+    y_margin = 0.12 * (max(ry(turn_mask)) - min(ry(turn_mask)));
+    x_margin = max(x_margin, 40);
+    y_margin = max(y_margin, 40);
+    xlim(ax, [min(rx(turn_mask))-x_margin, max(rx(turn_mask))+x_margin]);
+    if nargin >= 14 && ~isempty(y_limits)
+        ylim(ax, y_limits);
+    else
+        ylim(ax, [min(ry(turn_mask))-y_margin, max(ry(turn_mask))+y_margin]);
+    end
+end
+xlabel(ax, 'x [m]');
+ylabel(ax, 'y [m]');
+title(ax, title_text, 'FontName', figure_font_name, ...
+    'FontSize', axis_font_size, 'FontWeight', 'bold');
+style_axis(ax, figure_font_name, axis_font_size, axes_line_width, grid_color);
+style_axis_labels(ax, figure_font_name, axis_font_size);
+end
+
+function plot_straight_avoidance_zoom(ax, time_vector, x, h, rx, rh, obstacles, obstacle_id, ...
+    actual_color, reference_color, actual_line_width, reference_line_width, ...
+    figure_font_name, axis_font_size, axes_line_width, grid_color, title_text)
+obstacle_idx = find([obstacles.id] == obstacle_id, 1);
+if isempty(obstacle_idx)
+    obstacle_idx = obstacle_id;
+end
+
+time_margin = 8;
+plot_mask = abs(time_vector - obstacles(obstacle_idx).t) <= time_margin;
+plot(ax, x(plot_mask), h(plot_mask), '-', 'Color', actual_color, ...
+    'LineWidth', actual_line_width);
+hold(ax, 'on');
+plot(ax, rx(plot_mask), rh(plot_mask), '--', 'Color', reference_color, ...
+    'LineWidth', reference_line_width);
+plot_obstacle_marker_xh(ax, obstacles, obstacle_id);
+
+x_min = min([x(plot_mask); rx(plot_mask)]) - 20;
+x_max = max([x(plot_mask); rx(plot_mask)]) + 20;
+h_min = min([h(plot_mask); rh(plot_mask)]) - 0.5;
+h_max = max([h(plot_mask); rh(plot_mask)]) + 0.5;
+h_min = min(h_min, obstacles(obstacle_idx).pos(3) - 0.5);
+h_max = max(h_max, obstacles(obstacle_idx).pos(3) + 1.5);
+xlim(ax, [x_min x_max]);
+ylim(ax, [h_min h_max]);
+xlabel(ax, 'x [m]');
+ylabel(ax, 'h [m]');
+title(ax, title_text, 'FontName', figure_font_name, ...
+    'FontSize', axis_font_size, 'FontWeight', 'bold');
+style_axis(ax, figure_font_name, axis_font_size, axes_line_width, grid_color);
+style_axis_labels(ax, figure_font_name, axis_font_size);
+end
+
+function plot_obstacle_marker_xy(ax, obstacles, obstacle_id)
+obstacle_idx = find([obstacles.id] == obstacle_id, 1);
+if isempty(obstacle_idx)
+    obstacle_idx = obstacle_id;
+end
+plot(ax, obstacles(obstacle_idx).pos(1), obstacles(obstacle_idx).pos(2), ...
+    'ko', 'MarkerFaceColor', 'k', 'MarkerSize', 5, ...
+    'LineWidth', 1.0, 'HandleVisibility', 'off');
+end
+
+function plot_obstacle_marker_xh(ax, obstacles, obstacle_id)
+obstacle_idx = find([obstacles.id] == obstacle_id, 1);
+if isempty(obstacle_idx)
+    obstacle_idx = obstacle_id;
+end
+plot(ax, obstacles(obstacle_idx).pos(1), obstacles(obstacle_idx).pos(3), ...
+    'ko', 'MarkerFaceColor', 'k', 'MarkerSize', 5, ...
+    'LineWidth', 1.0, 'HandleVisibility', 'off');
 end
 
 function [actual_handle, reference_handle, limit_handle] = plot_reference_comparison_with_limits(ax, time_vector, signal, reference, limits, ...
@@ -570,16 +714,16 @@ end
 
 function plot_obstacle_centers_2d(ax, obstacles)
 for i = 1:numel(obstacles)
-    plot(ax, obstacles(i).pos(1), obstacles(i).pos(2), 'x', ...
-        'Color', [0.25 0.25 0.25], 'MarkerSize', 5, 'LineWidth', 1.0, ...
+    plot(ax, obstacles(i).pos(1), obstacles(i).pos(2), 'ko', ...
+        'MarkerFaceColor', 'k', 'MarkerSize', 5, 'LineWidth', 1.0, ...
         'HandleVisibility', 'off');
 end
 end
 
 function plot_obstacle_centers_3d(ax, obstacles)
 for i = 1:numel(obstacles)
-    plot3(ax, obstacles(i).pos(1), obstacles(i).pos(2), obstacles(i).pos(3), 'x', ...
-        'Color', [0.25 0.25 0.25], 'MarkerSize', 5, 'LineWidth', 1.0, ...
+    plot3(ax, obstacles(i).pos(1), obstacles(i).pos(2), obstacles(i).pos(3), 'ko', ...
+        'MarkerFaceColor', 'k', 'MarkerSize', 5, 'LineWidth', 1.0, ...
         'HandleVisibility', 'off');
 end
 end
@@ -608,7 +752,7 @@ min_obst_clearance = min(obst_clearance, [], 2);
 
 fig = figure('Color', 'w');
 set(fig, 'Units', 'centimeters');
-fig.Position(3:4) = [16 16];
+fig.Position(3:4) = [16 18];
 movegui(fig, 'center');
 set(fig, 'PaperPositionMode', 'auto');
 
@@ -621,13 +765,13 @@ xlabel(main_axis, 'Time [s]');
 ylabel(main_axis, 'Clearance [m]');
 setup_time_axis(main_axis, t_obst_plot(end), figure_font_name, axis_font_size, axes_line_width, grid_color);
 ylim(main_axis, [min(-0.5, min(min_obst_clearance)-0.2), max(min_obst_clearance)+5]);
-set(main_axis, 'Position', [0.13 0.73 0.80 0.17]);
+set(main_axis, 'Position', [0.13 0.78 0.80 0.14]);
 title(main_axis, 'Minimum clearance between the UAV and any obstacle', ...
     'FontName', figure_font_name, 'FontSize', axis_font_size, ...
     'FontWeight', 'bold');
 main_xlabel = get(main_axis, 'XLabel');
-main_xlabel.Position(2) = -0.30;
-add_subplot_label(main_axis, '(a)', figure_font_name, axis_font_size);
+main_xlabel.Position(2) = -0.38;
+add_subplot_label_at(main_axis, '(a)', figure_font_name, axis_font_size, 0.52, -0.23);
 
 num_zoom_obstacles = min(4, numel(obstacles));
 for i = 1:num_zoom_obstacles
@@ -650,13 +794,13 @@ for i = 1:num_zoom_obstacles
 
     zoom_axis = subplot(3,2,i+2, 'Parent', fig);
     if i == 1
-        set(zoom_axis, 'Position', [0.13 0.45 0.34 0.16]);
+        set(zoom_axis, 'Position', [0.13 0.52 0.34 0.14]);
     elseif i == 2
-        set(zoom_axis, 'Position', [0.59 0.45 0.34 0.16]);
+        set(zoom_axis, 'Position', [0.59 0.52 0.34 0.14]);
     elseif i == 3
-        set(zoom_axis, 'Position', [0.13 0.18 0.34 0.16]);
+        set(zoom_axis, 'Position', [0.13 0.24 0.34 0.14]);
     else
-        set(zoom_axis, 'Position', [0.59 0.18 0.34 0.16]);
+        set(zoom_axis, 'Position', [0.59 0.24 0.34 0.14]);
     end
     plot(zoom_axis, t_obst_plot, obstacle_clearance, '-', ...
         'Color', actual_color, 'LineWidth', actual_line_width);
@@ -688,13 +832,14 @@ for i = 1:num_zoom_obstacles
     style_axis(zoom_axis, figure_font_name, axis_font_size, axes_line_width, grid_color);
     style_axis_labels(zoom_axis, figure_font_name, axis_font_size);
     zoom_xlabel = get(zoom_axis, 'XLabel');
-    zoom_xlabel.Position(2) = -0.34;
+    zoom_xlabel.Position(2) = -0.42;
     if isfield(obstacles, 'id')
         obstacle_id = obstacles(i).id;
     else
         obstacle_id = i;
     end
-    add_subplot_label(zoom_axis, sprintf('(%c)', char('a' + i)), figure_font_name, axis_font_size);
+    add_subplot_label_at(zoom_axis, sprintf('(%c)', char('a' + i)), ...
+        figure_font_name, axis_font_size, 0.52, -0.25);
     title(zoom_axis, sprintf('Obstacle %d', obstacle_id), ...
         'FontName', figure_font_name, 'FontSize', axis_font_size, ...
         'FontWeight', 'bold');

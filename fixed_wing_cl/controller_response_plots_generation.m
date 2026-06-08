@@ -162,6 +162,10 @@ dU_ref(1,:) = ref_acc_samp(1,:);
 dU_ref(2:end,:) = ref_acc_samp(2:end,:) - ref_acc_samp(1:end-1,:);
 
 [a_con, da_con] = get_acceleration_constraints(run_data, U_d);
+if ~strcmp(case_data.id, 'contractive_mpc')
+    a_con = [-Inf Inf; -Inf Inf; -Inf Inf];
+    da_con = [-Inf Inf; -Inf Inf; -Inf Inf];
+end
 
 %% Figure 1: trajectory views
 trajectory_figure = figure('Color', 'w', 'Name', [case_data.name ' trajectory']);
